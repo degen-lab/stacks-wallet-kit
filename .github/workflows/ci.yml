@@ -1,0 +1,45 @@
+name: CI - test, lint, format and build
+
+on:
+  push:
+    branches: ['develop']
+
+  pull_request:
+    branches: ['develop']
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10.18.0
+
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Format
+        run: pnpm run format:check
+
+      - name: Build core package
+        run: pnpm --filter @google-wallet-sdk/core build
+
+      - name: Run Test
+        run: pnpm run test
+
+      - name: Build all packages
+        run: pnpm run build

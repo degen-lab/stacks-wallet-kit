@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "skipLibCheck": true,
+    "types": ["react", "jest", "node"],
+    "moduleResolution": "bundler",
+    "paths": {
+      "@google-wallet-sdk/core": ["../core/src/index.ts"]
+    }
+  },
+  "include": ["src", "testing"],
+  "exclude": ["node_modules", "dist"],
+  "references": [{ "path": "../core" }]
+}

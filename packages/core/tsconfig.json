@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "skipLibCheck": true,
+    "types": ["jest", "node"],
+    "moduleResolution": "node"
+  },
+  "include": ["src", "testing"],
+  "exclude": ["node_modules", "dist"]
+}
