@@ -28,6 +28,9 @@ export const stackingPools: Map<string, StackingPool> = new Map<
 >([
   [
     'Friedger',
-    { name: 'Friedger', address: 'SP21YTSM60CAY6D011EZVEVNKXVW8FVZE198XEFFP' },
+    {
+      name: 'Friedger',
+      address: 'SP21YTSM60CAY6D011EZVEVNKXVW8FVZE198XEFFP.pox4-fast-pool-v3',
+    },
   ],
 ])
