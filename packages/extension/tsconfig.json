@@ -5,7 +5,7 @@
     "skipLibCheck": true,
     "moduleResolution": "bundler",
     "paths": {
-      "@google-wallet-sdk/core": ["../core/src/index.ts"]
+      "@stacks-wallet-kit/core": ["../core/src/index.ts"]
     }
   },
   "include": ["src", "testing"],

@@ -19,7 +19,7 @@ module.exports = {
   extensionsToTreatAsEsm: ['.ts'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   moduleNameMapper: {
-    '^@google-wallet-sdk/core$': '<rootDir>/../core/src/index.ts',
+    '^@stacks-wallet-kit/core$': '<rootDir>/../core/src/index.ts',
   },
   transformIgnorePatterns: [
     'node_modules/(?!.*(@scure|@noble|micro-packed|@stacks))',

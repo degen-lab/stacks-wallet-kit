@@ -1,8 +1,5 @@
 import { AuthenticationCancelledError, AuthError } from '../../../src'
-import {
-  SDKError,
-  WalletNotStoredError,
-} from '../../../src/shared/errors/SDKError'
+import { WalletNotStoredError } from '../../../src/shared/errors/SDKError'
 import { NetworkType } from '../../../src/shared'
 import { BaseClient } from '../../../src/sdk/baseClient'
 import {
@@ -115,7 +112,9 @@ describe('BaseClient', () => {
       jest
         .spyOn(authenticationManager, 'signIn')
         .mockRejectedValueOnce(new Error('Unknown error'))
-      await expect(baseClient.loginWithGoogle()).rejects.toThrow(SDKError)
+      await expect(baseClient.loginWithGoogle()).rejects.toThrow(
+        'Unknown error'
+      )
       expect(authenticationManager.signIn).toHaveBeenCalled()
     })
   })
@@ -403,12 +402,9 @@ describe('BaseClient', () => {
     })
     it('should throw an error if the wallet is not found in storage', async () => {
       jest.spyOn(storageManager, 'getItem').mockResolvedValueOnce(null)
-      const error = await baseClient
-        .backupWallet('mock-password')
-        .catch((e) => e)
-      expect(error).toBeInstanceOf(SDKError)
-      expect(error.originalError).toBeInstanceOf(WalletNotStoredError)
-      expect(error.code).toBe('OPERATION_ERROR')
+      await expect(baseClient.backupWallet('mock-password')).rejects.toThrow(
+        WalletNotStoredError
+      )
     })
 
     it('should throw an error if the mnemonic is not found in storage', async () => {
@@ -439,9 +435,7 @@ describe('BaseClient', () => {
       const error = await baseClient
         .backupWallet('mock-password')
         .catch((e) => e)
-      expect(error).toBeInstanceOf(SDKError)
-      expect(error.originalError).toBeInstanceOf(WalletNotStoredError)
-      expect(error.code).toBe('OPERATION_ERROR')
+      expect(error).toBeInstanceOf(WalletNotStoredError)
     })
 
     it('should throw a backup error if the backup fails', async () => {
@@ -505,7 +499,7 @@ describe('BaseClient', () => {
         .spyOn(helpers, 'getFingerPrintFromMnemonic')
         .mockRejectedValueOnce(new Error('Unknown error'))
       await expect(baseClient.backupWallet('mock-password')).rejects.toThrow(
-        SDKError
+        'Unknown error'
       )
     })
 
@@ -593,7 +587,7 @@ describe('BaseClient', () => {
         })
 
       await expect(baseClient.backupWallet('test-password')).rejects.toThrow(
-        SDKError
+        'Token refresh failed'
       )
 
       expect(backupManager.getAccessTokenFromClient).toHaveBeenCalled()
@@ -690,7 +684,7 @@ describe('BaseClient', () => {
         .spyOn(backupManager, 'retrieveBackup')
         .mockRejectedValueOnce(new Error('Unknown error'))
       await expect(baseClient.retrieveWallet('test-password')).rejects.toThrow(
-        SDKError
+        'Unknown error'
       )
     })
 
@@ -760,7 +754,7 @@ describe('BaseClient', () => {
           throw new Error('Token refresh failed')
         })
       await expect(baseClient.retrieveWallet('test-password')).rejects.toThrow(
-        SDKError
+        'Token refresh failed'
       )
     })
   })
@@ -786,9 +780,7 @@ describe('BaseClient', () => {
       const error = await baseClient
         .deleteBackup('test-password')
         .catch((e) => e)
-      expect(error).toBeInstanceOf(SDKError)
-      expect(error.originalError).toBeInstanceOf(WalletNotStoredError)
-      expect(error.code).toBe('OPERATION_ERROR')
+      expect(error).toBeInstanceOf(WalletNotStoredError)
     })
 
     it('should throw a backup error if the backup fails', async () => {
@@ -812,7 +804,7 @@ describe('BaseClient', () => {
         .spyOn(helpers, 'getFingerPrintFromMnemonic')
         .mockRejectedValueOnce(new Error('Unknown error'))
       await expect(baseClient.deleteBackup('test-password')).rejects.toThrow(
-        SDKError
+        Error
       )
     })
 
@@ -870,7 +862,7 @@ describe('BaseClient', () => {
         })
 
       await expect(baseClient.deleteBackup('test-password')).rejects.toThrow(
-        SDKError
+        Error
       )
 
       expect(backupManager.getAccessTokenFromClient).toHaveBeenCalled()
@@ -911,7 +903,7 @@ describe('BaseClient', () => {
       jest
         .spyOn(authenticationManager, 'signOut')
         .mockRejectedValueOnce(new Error('Unknown error'))
-      await expect(baseClient.signOut()).rejects.toThrow(SDKError)
+      await expect(baseClient.signOut()).rejects.toThrow(Error)
     })
   })
 
@@ -996,7 +988,7 @@ describe('BaseClient', () => {
       )
     })
 
-    it('should throw SDKError wrapping WalletNotStoredError if wallet is not found', async () => {
+    it('should throw WalletNotStoredError if wallet is not found', async () => {
       jest.spyOn(storageManager, 'getItem').mockResolvedValueOnce(null)
 
       const error = await baseClient
@@ -1008,9 +1000,7 @@ describe('BaseClient', () => {
         )
         .catch((e) => e)
 
-      expect(error).toBeInstanceOf(SDKError)
-      expect(error.originalError).toBeInstanceOf(WalletNotStoredError)
-      expect(error.code).toBe('OPERATION_ERROR')
+      expect(error).toBeInstanceOf(WalletNotStoredError)
       expect(storageManager.getItem).toHaveBeenCalledWith('wallet')
       expect(stacksClient.sendStx).not.toHaveBeenCalled()
     })
@@ -1032,21 +1022,18 @@ describe('BaseClient', () => {
         throw new PrivateKeyNotFoundError()
       })
 
-      // Verify it's not wrapped in SDKError (EncryptionError is re-thrown by errorHandler)
-      const error = await baseClient
-        .sendStx(
+      // Verify EncryptionError is thrown directly
+      await expect(
+        baseClient.sendStx(
           0,
           'SP987654321098765432109876543210987654321',
           1.0,
           NetworkType.Mainnet
         )
-        .catch((e) => e)
-      expect(error).toBeInstanceOf(PrivateKeyNotFoundError)
-      expect(error).toBeInstanceOf(EncryptionError)
-      expect(error).not.toBeInstanceOf(SDKError)
+      ).rejects.toThrow(PrivateKeyNotFoundError)
     })
 
-    it('should throw SDKError if storage getItem throws an unknown error', async () => {
+    it('should throw Error if storage getItem throws an unknown error', async () => {
       jest
         .spyOn(storageManager, 'getItem')
         .mockRejectedValueOnce(new Error('Storage error'))
@@ -1058,10 +1045,10 @@ describe('BaseClient', () => {
           1.0,
           NetworkType.Mainnet
         )
-      ).rejects.toThrow(SDKError)
+      ).rejects.toThrow(Error)
     })
 
-    it('should throw SDKError if an unknown error occurs in stacksClient', async () => {
+    it('should throw Error if an unknown error occurs in stacksClient', async () => {
       const mockWallet = await createMockWallet()
       mockWallet.accounts = [
         {
@@ -1085,7 +1072,7 @@ describe('BaseClient', () => {
           1.0,
           NetworkType.Mainnet
         )
-      ).rejects.toThrow(SDKError)
+      ).rejects.toThrow(Error)
     })
   })
 
@@ -1163,7 +1150,7 @@ describe('BaseClient', () => {
       )
     })
 
-    it('should throw SDKError wrapping WalletNotStoredError if wallet is not found', async () => {
+    it('should throw WalletNotStoredError if wallet is not found', async () => {
       jest.spyOn(storageManager, 'getItem').mockResolvedValueOnce(null)
 
       // Verify it's wrapped in SDKError with original error
@@ -1177,9 +1164,7 @@ describe('BaseClient', () => {
         )
         .catch((e) => e)
 
-      expect(error).toBeInstanceOf(SDKError)
-      expect(error.originalError).toBeInstanceOf(WalletNotStoredError)
-      expect(error.code).toBe('OPERATION_ERROR')
+      expect(error).toBeInstanceOf(WalletNotStoredError)
       expect(storageManager.getItem).toHaveBeenCalledWith('wallet')
       expect(stacksClient.transferNFT).not.toHaveBeenCalled()
     })
@@ -1213,7 +1198,6 @@ describe('BaseClient', () => {
         .catch((e) => e)
       expect(error).toBeInstanceOf(PrivateKeyNotFoundError)
       expect(error).toBeInstanceOf(EncryptionError)
-      expect(error).not.toBeInstanceOf(SDKError)
     })
 
     it('should throw SDKError if account index is out of bounds', async () => {
@@ -1238,10 +1222,10 @@ describe('BaseClient', () => {
           'SP987654321098765432109876543210987654321',
           NetworkType.Mainnet
         )
-      ).rejects.toThrow(SDKError)
+      ).rejects.toThrow(Error)
     })
 
-    it('should throw SDKError if storage getItem throws an unknown error', async () => {
+    it('should throw Error if storage getItem throws an unknown error', async () => {
       jest
         .spyOn(storageManager, 'getItem')
         .mockRejectedValueOnce(new Error('Storage error'))
@@ -1254,10 +1238,10 @@ describe('BaseClient', () => {
           'SP987654321098765432109876543210987654321',
           NetworkType.Mainnet
         )
-      ).rejects.toThrow(SDKError)
+      ).rejects.toThrow(Error)
     })
 
-    it('should throw SDKError if an unknown error occurs', async () => {
+    it('should throw Error if an unknown error occurs', async () => {
       const mockWallet = await createMockWallet()
       mockWallet.accounts = [
         {
@@ -1282,7 +1266,7 @@ describe('BaseClient', () => {
           'SP987654321098765432109876543210987654321',
           NetworkType.Mainnet
         )
-      ).rejects.toThrow(SDKError)
+      ).rejects.toThrow(Error)
     })
   })
 
@@ -1360,7 +1344,7 @@ describe('BaseClient', () => {
       )
     })
 
-    it('should throw SDKError wrapping WalletNotStoredError if wallet is not found', async () => {
+    it('should throw WalletNotStoredError if wallet is not found', async () => {
       jest.spyOn(storageManager, 'getItem').mockResolvedValueOnce(null)
 
       // Verify it's wrapped in SDKError with original error
@@ -1374,9 +1358,7 @@ describe('BaseClient', () => {
         )
         .catch((e) => e)
 
-      expect(error).toBeInstanceOf(SDKError)
-      expect(error.originalError).toBeInstanceOf(WalletNotStoredError)
-      expect(error.code).toBe('OPERATION_ERROR')
+      expect(error).toBeInstanceOf(WalletNotStoredError)
       expect(storageManager.getItem).toHaveBeenCalledWith('wallet')
       expect(stacksClient.transferFT).not.toHaveBeenCalled()
     })
@@ -1410,7 +1392,6 @@ describe('BaseClient', () => {
         .catch((e) => e)
       expect(error).toBeInstanceOf(PrivateKeyNotFoundError)
       expect(error).toBeInstanceOf(EncryptionError)
-      expect(error).not.toBeInstanceOf(SDKError)
     })
 
     it('should throw SDKError if account index is out of bounds', async () => {
@@ -1435,10 +1416,10 @@ describe('BaseClient', () => {
           'SP987654321098765432109876543210987654321',
           NetworkType.Mainnet
         )
-      ).rejects.toThrow(SDKError)
+      ).rejects.toThrow(Error)
     })
 
-    it('should throw SDKError if storage getItem throws an unknown error', async () => {
+    it('should throw Error if storage getItem throws an unknown error', async () => {
       jest
         .spyOn(storageManager, 'getItem')
         .mockRejectedValueOnce(new Error('Storage error'))
@@ -1451,10 +1432,10 @@ describe('BaseClient', () => {
           'SP987654321098765432109876543210987654321',
           NetworkType.Mainnet
         )
-      ).rejects.toThrow(SDKError)
+      ).rejects.toThrow(Error)
     })
 
-    it('should throw SDKError if an unknown error occurs', async () => {
+    it('should throw Error if an unknown error occurs', async () => {
       const mockWallet = await createMockWallet()
       mockWallet.accounts = [
         {
@@ -1479,7 +1460,7 @@ describe('BaseClient', () => {
           'SP987654321098765432109876543210987654321',
           NetworkType.Mainnet
         )
-      ).rejects.toThrow(SDKError)
+      ).rejects.toThrow(Error)
     })
   })
 
@@ -1533,7 +1514,8 @@ describe('BaseClient', () => {
         mockBtcAddresses,
         100000, // currentBurnHeight
         6, // lockPeriod
-        1000 // maxAmount
+        1000, // maxAmount
+        undefined // options
       )
     })
 
@@ -1638,7 +1620,7 @@ describe('BaseClient', () => {
       ).rejects.toThrow(InvalidLockPeriod)
     })
 
-    it('should throw SDKError wrapping WalletNotStoredError if wallet is not found', async () => {
+    it('should throw WalletNotStoredError if wallet is not found', async () => {
       jest.spyOn(stacksClient, 'getPoxData').mockResolvedValueOnce({
         minimumThreshold: 1000000,
         currentBurnHeight: 100000,
@@ -1652,12 +1634,10 @@ describe('BaseClient', () => {
         .stackSTX(mockAccount, 500, 6, 1000)
         .catch((e) => e)
 
-      expect(error).toBeInstanceOf(SDKError)
-      expect(error.originalError).toBeInstanceOf(WalletNotStoredError)
-      expect(error.code).toBe('OPERATION_ERROR')
+      expect(error).toBeInstanceOf(WalletNotStoredError)
     })
 
-    it('should throw SDKError if an unknown error occurs', async () => {
+    it('should throw Error if an unknown error occurs', async () => {
       const mockWallet = await createMockWallet()
       mockWallet.accounts = [mockAccount]
 
@@ -1675,7 +1655,7 @@ describe('BaseClient', () => {
 
       await expect(
         baseClient.stackSTX(mockAccount, 500, 6, 1000)
-      ).rejects.toThrow(SDKError)
+      ).rejects.toThrow(Error)
     })
   })
 
@@ -1725,23 +1705,22 @@ describe('BaseClient', () => {
         5, // currentRewardCycle
         3, // extendCount
         mockBtcAddresses,
-        1000 // maxAmount
+        1000, // maxAmount
+        undefined // options
       )
     })
 
-    it('should throw SDKError wrapping WalletNotStoredError if wallet is not found', async () => {
+    it('should throw WalletNotStoredError if wallet is not found', async () => {
       jest.spyOn(storageManager, 'getItem').mockResolvedValueOnce(null)
 
       const error = await baseClient
         .stackExtend(mockAccount, 3, 1000)
         .catch((e) => e)
 
-      expect(error).toBeInstanceOf(SDKError)
-      expect(error.originalError).toBeInstanceOf(WalletNotStoredError)
-      expect(error.code).toBe('OPERATION_ERROR')
+      expect(error).toBeInstanceOf(WalletNotStoredError)
     })
 
-    it('should throw SDKError if an unknown error occurs', async () => {
+    it('should throw Error if an unknown error occurs', async () => {
       const mockWallet = await createMockWallet()
       mockWallet.accounts = [mockAccount]
 
@@ -1750,12 +1729,9 @@ describe('BaseClient', () => {
         .spyOn(stacksClient, 'getPoxData')
         .mockRejectedValueOnce(new Error('Unknown error'))
 
-      const error = await baseClient
-        .stackExtend(mockAccount, 3, 1000)
-        .catch((e) => e)
-
-      expect(error).toBeInstanceOf(SDKError)
-      expect(error.code).toBe('OPERATION_ERROR')
+      await expect(
+        baseClient.stackExtend(mockAccount, 3, 1000)
+      ).rejects.toThrow('Unknown error')
     })
   })
 
@@ -1806,23 +1782,22 @@ describe('BaseClient', () => {
         mockBtcAddresses,
         200, // increaseBy
         1000, // maxAmount
-        4 // currentLockPeriod
+        4, // currentLockPeriod
+        undefined // options
       )
     })
 
-    it('should throw SDKError wrapping WalletNotStoredError if wallet is not found', async () => {
+    it('should throw WalletNotStoredError if wallet is not found', async () => {
       jest.spyOn(storageManager, 'getItem').mockResolvedValueOnce(null)
 
       const error = await baseClient
         .stackIncrease(mockAccount, 200, 1000, 4)
         .catch((e) => e)
 
-      expect(error).toBeInstanceOf(SDKError)
-      expect(error.originalError).toBeInstanceOf(WalletNotStoredError)
-      expect(error.code).toBe('OPERATION_ERROR')
+      expect(error).toBeInstanceOf(WalletNotStoredError)
     })
 
-    it('should throw SDKError if an unknown error occurs', async () => {
+    it('should throw Error if an unknown error occurs', async () => {
       const mockWallet = await createMockWallet()
       mockWallet.accounts = [mockAccount]
 
@@ -1831,12 +1806,9 @@ describe('BaseClient', () => {
         .spyOn(stacksClient, 'getPoxData')
         .mockRejectedValueOnce(new Error('Unknown error'))
 
-      const error = await baseClient
-        .stackIncrease(mockAccount, 200, 1000, 4)
-        .catch((e) => e)
-
-      expect(error).toBeInstanceOf(SDKError)
-      expect(error.code).toBe('OPERATION_ERROR')
+      await expect(
+        baseClient.stackIncrease(mockAccount, 200, 1000, 4)
+      ).rejects.toThrow('Unknown error')
     })
   })
 
@@ -1924,19 +1896,17 @@ describe('BaseClient', () => {
       )
     })
 
-    it('should throw SDKError wrapping WalletNotStoredError if wallet is not found', async () => {
+    it('should throw WalletNotStoredError if wallet is not found', async () => {
       jest.spyOn(storageManager, 'getItem').mockResolvedValueOnce(null)
 
       const error = await baseClient
         .delegateSTX(mockAccount, 100, mockPool)
         .catch((e) => e)
 
-      expect(error).toBeInstanceOf(SDKError)
-      expect(error.originalError).toBeInstanceOf(WalletNotStoredError)
-      expect(error.code).toBe('OPERATION_ERROR')
+      expect(error).toBeInstanceOf(WalletNotStoredError)
     })
 
-    it('should throw SDKError if an unknown error occurs', async () => {
+    it('should throw Error if an unknown error occurs', async () => {
       const mockWallet = await createMockWallet()
       mockWallet.accounts = [mockAccount]
 
@@ -1945,12 +1915,9 @@ describe('BaseClient', () => {
         .spyOn(helpers, 'getBitcoinAddressesFromStacksWallet')
         .mockRejectedValueOnce(new Error('Unknown error'))
 
-      const error = await baseClient
-        .delegateSTX(mockAccount, 100, mockPool)
-        .catch((e) => e)
-
-      expect(error).toBeInstanceOf(SDKError)
-      expect(error.code).toBe('OPERATION_ERROR')
+      await expect(
+        baseClient.delegateSTX(mockAccount, 100, mockPool)
+      ).rejects.toThrow('Unknown error')
     })
   })
 
@@ -1982,19 +1949,17 @@ describe('BaseClient', () => {
       )
     })
 
-    it('should throw SDKError wrapping WalletNotStoredError if wallet is not found', async () => {
+    it('should throw WalletNotStoredError if wallet is not found', async () => {
       jest.spyOn(storageManager, 'getItem').mockResolvedValueOnce(null)
 
       const error = await baseClient
         .revokeDelegation(mockAccount)
         .catch((e) => e)
 
-      expect(error).toBeInstanceOf(SDKError)
-      expect(error.originalError).toBeInstanceOf(WalletNotStoredError)
-      expect(error.code).toBe('OPERATION_ERROR')
+      expect(error).toBeInstanceOf(WalletNotStoredError)
     })
 
-    it('should throw SDKError if an unknown error occurs', async () => {
+    it('should throw Error if an unknown error occurs', async () => {
       const mockWallet = await createMockWallet()
       mockWallet.accounts = [mockAccount]
 
@@ -2003,12 +1968,9 @@ describe('BaseClient', () => {
         .spyOn(stackingClient, 'revokeDelegation')
         .mockRejectedValueOnce(new Error('Unknown error'))
 
-      const error = await baseClient
-        .revokeDelegation(mockAccount)
-        .catch((e) => e)
-
-      expect(error).toBeInstanceOf(SDKError)
-      expect(error.code).toBe('OPERATION_ERROR')
+      await expect(baseClient.revokeDelegation(mockAccount)).rejects.toThrow(
+        'Unknown error'
+      )
     })
   })
 
@@ -2044,7 +2006,42 @@ describe('BaseClient', () => {
         'my-contract',
         functionName,
         functionArgs,
-        expect.any(String) // senderKey derived from wallet
+        expect.any(String),
+        undefined
+      )
+    })
+
+    it('should make contract call with postConditionMode', async () => {
+      const mockWallet = await createMockWallet()
+      const contractAddress =
+        'SP1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ.my-contract'
+      const functionName = 'my-function'
+      const mockUintCV = { type: 'uint', value: BigInt(100) } as ClarityValue
+      const functionArgs: ClarityValue[] = [mockUintCV]
+      const mockTxid = '0xabcdef1234567890'
+      const { PostConditionMode } = await import('@stacks/transactions')
+
+      jest.spyOn(storageManager, 'getItem').mockResolvedValueOnce(mockWallet)
+      jest
+        .spyOn(stacksClient, 'makeContractCall')
+        .mockResolvedValueOnce(mockTxid)
+
+      const result = await baseClient.makeContractCall(
+        contractAddress,
+        functionName,
+        functionArgs,
+        PostConditionMode.Allow
+      )
+
+      expect(result).toBe(mockTxid)
+      expect(storageManager.getItem).toHaveBeenCalledWith('wallet')
+      expect(stacksClient.makeContractCall).toHaveBeenCalledWith(
+        'SP1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+        'my-contract',
+        functionName,
+        functionArgs,
+        expect.any(String),
+        PostConditionMode.Allow
       )
     })
 
@@ -2089,7 +2086,8 @@ describe('BaseClient', () => {
         'another-contract',
         functionName,
         functionArgs,
-        expect.any(String)
+        expect.any(String), // senderKey derived from wallet
+        undefined // postConditionMode defaults to undefined (will use default in stacksClient)
       )
     })
 

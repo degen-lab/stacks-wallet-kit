@@ -8,7 +8,11 @@ import {
   tupleCV,
   uintCV,
 } from '@stacks/transactions'
-import { StackingClient, NetworkType } from '../../../src'
+import {
+  StackingClient,
+  NetworkType,
+  STACKS_WEB_DEVNET_API_BASE_URL,
+} from '../../../src'
 import {
   SignatureResponse,
   SignatureTopic,
@@ -48,7 +52,10 @@ describe('StackingClient Unit Tests', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
-    stackingClient = new StackingClient(NetworkType.Mainnet)
+    stackingClient = new StackingClient(
+      NetworkType.Mainnet,
+      STACKS_WEB_DEVNET_API_BASE_URL
+    )
     ;(btcAddressToPoxAddress as jest.Mock).mockReturnValue({
       version: mockVersion,
       hashBytes: mockHashBytes,
@@ -137,6 +144,9 @@ describe('StackingClient Unit Tests', () => {
       })
       expect(broadcastTransaction).toHaveBeenCalledWith({
         transaction: mockTransaction,
+        client: expect.objectContaining({
+          fetch: expect.any(Function),
+        }),
       })
     })
 
@@ -271,7 +281,10 @@ describe('StackingClient Unit Tests', () => {
     })
 
     it('should use testnet Bitcoin address when network is testnet and btcAddresses provided', async () => {
-      const testnetClient = new StackingClient(NetworkType.Testnet)
+      const testnetClient = new StackingClient(
+        NetworkType.Testnet,
+        STACKS_WEB_DEVNET_API_BASE_URL
+      )
       const amount = 200
       const mockTransaction = { txid: mockTxid }
       const mockBroadcastResponse = { txid: mockTxid }
@@ -322,7 +335,10 @@ describe('StackingClient Unit Tests', () => {
     })
 
     it('should use testnet contract address when network is testnet', async () => {
-      const testnetClient = new StackingClient(NetworkType.Testnet)
+      const testnetClient = new StackingClient(
+        NetworkType.Testnet,
+        STACKS_WEB_DEVNET_API_BASE_URL
+      )
       const amount = 100
       const mockTransaction = { txid: mockTxid }
       const mockBroadcastResponse = { txid: mockTxid }
@@ -380,11 +396,17 @@ describe('StackingClient Unit Tests', () => {
       })
       expect(broadcastTransaction).toHaveBeenCalledWith({
         transaction: mockTransaction,
+        client: expect.objectContaining({
+          fetch: expect.any(Function),
+        }),
       })
     })
 
     it('should revoke delegation successfully on testnet', async () => {
-      const testnetClient = new StackingClient(NetworkType.Testnet)
+      const testnetClient = new StackingClient(
+        NetworkType.Testnet,
+        STACKS_WEB_DEVNET_API_BASE_URL
+      )
       const mockTransaction = { txid: mockTxid }
       const mockBroadcastResponse = { txid: mockTxid }
 
@@ -501,6 +523,9 @@ describe('StackingClient Unit Tests', () => {
       )
       expect(broadcastTransaction).toHaveBeenCalledWith({
         transaction: mockTransaction,
+        client: expect.objectContaining({
+          fetch: expect.any(Function),
+        }),
       })
     })
 
@@ -613,11 +638,17 @@ describe('StackingClient Unit Tests', () => {
       )
       expect(broadcastTransaction).toHaveBeenCalledWith({
         transaction: mockTransaction,
+        client: expect.objectContaining({
+          fetch: expect.any(Function),
+        }),
       })
     })
 
     it('should use testnet Bitcoin address when network is testnet', async () => {
-      const testnetClient = new StackingClient(NetworkType.Testnet)
+      const testnetClient = new StackingClient(
+        NetworkType.Testnet,
+        STACKS_WEB_DEVNET_API_BASE_URL
+      )
       const rewardCycle = 5
       const amount = 500
       const startBurnHeight = 100000
@@ -798,6 +829,9 @@ describe('StackingClient Unit Tests', () => {
       )
       expect(broadcastTransaction).toHaveBeenCalledWith({
         transaction: mockTransaction,
+        client: expect.objectContaining({
+          fetch: expect.any(Function),
+        }),
       })
     })
   })

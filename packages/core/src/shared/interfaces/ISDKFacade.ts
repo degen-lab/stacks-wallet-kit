@@ -1,4 +1,4 @@
-import { ClarityValue } from '@stacks/transactions'
+import { ClarityValue, PostConditionMode } from '@stacks/transactions'
 import { StackingPool } from '../../stacks/utils/types'
 import { NetworkType, Wallet, WalletAccount } from '../types/backupTypes'
 
@@ -43,18 +43,33 @@ export interface ISDKFacade {
     account: WalletAccount,
     amount: number,
     lockPeriod: number,
-    maxAmount: number
+    maxAmount: number,
+    options?: {
+      signerSignature: string
+      signerKey: string
+      authId: string
+    }
   ): Promise<string>
   stackExtend(
     account: WalletAccount,
     extendCount: number,
-    maxAmount: number
+    maxAmount: number,
+    options?: {
+      signerSignature: string
+      signerKey: string
+      authId: string
+    }
   ): Promise<string>
   stackIncrease(
     account: WalletAccount,
     increaseBy: number,
     maxAmount: number,
-    currentLockPeriod: number
+    currentLockPeriod: number,
+    options?: {
+      signerSignature: string
+      signerKey: string
+      authId: string
+    }
   ): Promise<string>
 
   delegateSTX(
@@ -74,6 +89,7 @@ export interface ISDKFacade {
   makeContractCall(
     contractAddress: string,
     functionName: string,
-    functionArgs: ClarityValue[]
+    functionArgs: ClarityValue[],
+    postConditionMode?: PostConditionMode
   ): Promise<string>
 }

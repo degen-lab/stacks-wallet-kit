@@ -8,12 +8,12 @@ module.exports = {
       'ts-jest',
       {
         useESM: true,
+        isolatedModules: false,
         tsconfig: {
-          moduleResolution: 'bundler',
+          moduleResolution: 'node',
           skipLibCheck: true,
-          paths: {
-            '@google-wallet-sdk/core': ['<rootDir>/../core/src/index.ts'],
-          },
+          esModuleInterop: true,
+          allowSyntheticDefaultImports: true,
         },
       },
     ],
@@ -22,7 +22,8 @@ module.exports = {
   extensionsToTreatAsEsm: ['.ts'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   moduleNameMapper: {
-    '^@google-wallet-sdk/core$': '<rootDir>/../core/src/index.ts',
+    '^@stacks-wallet-kit/core$': '<rootDir>/../core/src/index.ts',
+    '^@stacks-wallet-kit/core/(.*)$': '<rootDir>/../core/src/$1',
     '^@react-native-google-signin/google-signin$':
       '<rootDir>/testing/__mocks__/google-signin.ts',
     '^expo-secure-store$': '<rootDir>/testing/__mocks__/expo-secure-store.ts',

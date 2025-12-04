@@ -10,7 +10,7 @@ import {
 } from '@stacks/transactions'
 import {
   STACKS_API_BASE_URL,
-  STACKS_DEVNET_API_BASE_URL,
+  STACKS_WEB_DEVNET_API_BASE_URL,
   STACKS_TESTNET_API_BASE_URL,
   StacksClient,
   NetworkType,
@@ -31,7 +31,7 @@ describe('Stacks Client Unit Tests', () => {
       NetworkType.Mainnet,
       STACKS_API_BASE_URL,
       STACKS_TESTNET_API_BASE_URL,
-      STACKS_DEVNET_API_BASE_URL
+      STACKS_WEB_DEVNET_API_BASE_URL
     )
   })
 
@@ -70,7 +70,7 @@ describe('Stacks Client Unit Tests', () => {
         NetworkType.Testnet,
         STACKS_TESTNET_API_BASE_URL,
         STACKS_TESTNET_API_BASE_URL,
-        STACKS_DEVNET_API_BASE_URL
+        STACKS_WEB_DEVNET_API_BASE_URL
       )
       const mockBalance = 5000000 // 5 STX in microSTX
       ;(global.fetch as jest.Mock).mockResolvedValueOnce({
@@ -128,6 +128,9 @@ describe('Stacks Client Unit Tests', () => {
       })
       expect(broadcastTransaction).toHaveBeenCalledWith({
         transaction: mockTransaction,
+        client: expect.objectContaining({
+          fetch: expect.any(Function),
+        }),
       })
     })
 
@@ -211,6 +214,9 @@ describe('Stacks Client Unit Tests', () => {
       })
       expect(broadcastTransaction).toHaveBeenCalledWith({
         transaction: mockTransaction,
+        client: expect.objectContaining({
+          fetch: expect.any(Function),
+        }),
       })
     })
   })
@@ -266,6 +272,9 @@ describe('Stacks Client Unit Tests', () => {
       })
       expect(broadcastTransaction).toHaveBeenCalledWith({
         transaction: mockTransaction,
+        client: expect.objectContaining({
+          fetch: expect.any(Function),
+        }),
       })
     })
   })
@@ -312,6 +321,9 @@ describe('Stacks Client Unit Tests', () => {
       })
       expect(broadcastTransaction).toHaveBeenCalledWith({
         transaction: mockTransaction,
+        client: expect.objectContaining({
+          fetch: expect.any(Function),
+        }),
       })
     })
 
@@ -354,6 +366,9 @@ describe('Stacks Client Unit Tests', () => {
       })
       expect(broadcastTransaction).toHaveBeenCalledWith({
         transaction: mockTransaction,
+        client: expect.objectContaining({
+          fetch: expect.any(Function),
+        }),
       })
     })
 
@@ -362,7 +377,7 @@ describe('Stacks Client Unit Tests', () => {
         NetworkType.Devnet,
         STACKS_API_BASE_URL,
         STACKS_TESTNET_API_BASE_URL,
-        STACKS_DEVNET_API_BASE_URL
+        STACKS_WEB_DEVNET_API_BASE_URL
       )
       const contractAddress = 'ST1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ'
       const contractName = 'my-contract'
@@ -391,6 +406,9 @@ describe('Stacks Client Unit Tests', () => {
         transaction: mockTransaction,
         network: expect.objectContaining({
           chainId: expect.any(Number),
+        }),
+        client: expect.objectContaining({
+          fetch: expect.any(Function),
         }),
       })
     })

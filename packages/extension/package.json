@@ -1,10 +1,19 @@
 {
-  "name": "@google-wallet-sdk/extension",
+  "name": "@stacks-wallet-kit/extension",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js",
+      "default": "./dist/src/index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "dependencies": {
-    "@google-wallet-sdk/core": "workspace:*",
+    "@stacks-wallet-kit/core": "file:../core",
     "local-storage": "^2.0.0"
   },
   "devDependencies": {

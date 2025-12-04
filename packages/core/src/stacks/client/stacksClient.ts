@@ -52,10 +52,14 @@ export class StacksClient implements IStacksClient {
       network: networkObject,
       postConditionMode,
     })
+    // Wrap fetch in a function to preserve context when passed to broadcastTransaction
+    const fetchWrapper = (input: RequestInfo | URL, init?: RequestInit) =>
+      fetch(input, init)
     const broadcastOptions: {
       transaction: typeof transaction
       network?: StacksNetwork
-    } = { transaction }
+      client?: { fetch: typeof fetch }
+    } = { transaction, client: { fetch: fetchWrapper } }
     if (this.network === NetworkType.Devnet) {
       broadcastOptions.network = networkObject
     }
@@ -150,13 +154,22 @@ export class StacksClient implements IStacksClient {
 
     const transaction = await makeSTXTokenTransfer(txOptions)
 
+    // Wrap fetch in a function to preserve context when passed to broadcastTransaction
+    const fetchWrapper = (input: RequestInfo | URL, init?: RequestInit) =>
+      fetch(input, init)
+
     const broadcastOptions: {
       transaction: StacksTransactionWire
       network?: StacksNetwork
+      client?: { fetch: typeof fetch }
     } =
       network === NetworkType.Devnet
-        ? { transaction, network: networkObject }
-        : { transaction }
+        ? {
+            transaction,
+            network: networkObject,
+            client: { fetch: fetchWrapper },
+          }
+        : { transaction, client: { fetch: fetchWrapper } }
 
     const response = await broadcastTransaction(broadcastOptions)
 
@@ -195,10 +208,14 @@ export class StacksClient implements IStacksClient {
       network: networkObject,
       postConditionMode: PostConditionMode.Allow,
     })
+    // Wrap fetch in a function to preserve context when passed to broadcastTransaction
+    const fetchWrapper = (input: RequestInfo | URL, init?: RequestInit) =>
+      fetch(input, init)
     const broadcastOptions: {
       transaction: typeof transaction
       network?: StacksNetwork
-    } = { transaction }
+      client?: { fetch: typeof fetch }
+    } = { transaction, client: { fetch: fetchWrapper } }
     if (network === NetworkType.Devnet) {
       broadcastOptions.network = networkObject
     }
@@ -233,10 +250,14 @@ export class StacksClient implements IStacksClient {
       postConditionMode: PostConditionMode.Allow,
     })
 
+    // Wrap fetch in a function to preserve context when passed to broadcastTransaction
+    const fetchWrapper = (input: RequestInfo | URL, init?: RequestInit) =>
+      fetch(input, init)
     const broadcastOptions: {
       transaction: typeof transaction
       network?: StacksNetwork
-    } = { transaction }
+      client?: { fetch: typeof fetch }
+    } = { transaction, client: { fetch: fetchWrapper } }
     if (network === NetworkType.Devnet) {
       broadcastOptions.network = networkObject
     }
@@ -255,6 +276,10 @@ export class StacksClient implements IStacksClient {
   }
 
   private getNetworkObject(network: NetworkType): StacksNetwork {
+    // Wrap fetch in a function to preserve context (platform-agnostic)
+    const fetchWrapper = (input: RequestInfo | URL, init?: RequestInit) =>
+      fetch(input, init)
+
     if (network === NetworkType.Devnet) {
       const baseUrl = this.baseUrl.endsWith('/')
         ? this.baseUrl.slice(0, -1)
@@ -264,12 +289,16 @@ export class StacksClient implements IStacksClient {
         network: 'devnet',
         client: {
           baseUrl,
-          fetch: fetch,
+          fetch: fetchWrapper,
         },
       })
     }
-    return createNetwork(
-      network === NetworkType.Mainnet ? 'mainnet' : 'testnet'
-    )
+    // For mainnet/testnet, also pass client with wrapped fetch to ensure makeContractCall works
+    return createNetwork({
+      network: network === NetworkType.Mainnet ? 'mainnet' : 'testnet',
+      client: {
+        fetch: fetchWrapper,
+      },
+    })
   }
 }

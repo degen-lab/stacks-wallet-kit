@@ -1,4 +1,4 @@
-import { IStorageManager } from '@google-wallet-sdk/core'
+import { IStorageManager } from '@stacks-wallet-kit/core'
 import { KeyChainStorage } from './keyChainStorage'
 import { SecureStore } from './secureStore'
 

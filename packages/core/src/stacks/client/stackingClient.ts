@@ -17,15 +17,15 @@ import { IStackingClient, SigningError, NetworkType } from '../../shared'
 import {
   MAINNET_POX_ADDRESS,
   SIGNATURE_ENDPOINT,
-  STACKS_DEVNET_API_BASE_URL,
   TESTNET_POX_ADDRESS,
 } from '../utils/constants'
 import { SignatureResponse, SignatureTopic, StackingPool } from '../utils/types'
 
 export class StackingClient implements IStackingClient {
-  private network: NetworkType
-
-  constructor(network: NetworkType) {
+  constructor(
+    private network: NetworkType,
+    private devnetBaseUrl: string
+  ) {
     this.network = network
   }
 
@@ -77,10 +77,14 @@ export class StackingClient implements IStackingClient {
       postConditionMode: PostConditionMode.Deny,
     }
     const transaction = await makeContractCall(txOptions)
+    // Wrap fetch in a function to preserve context when passed to broadcastTransaction
+    const fetchWrapper = (input: RequestInfo | URL, init?: RequestInit) =>
+      fetch(input, init)
     const broadcastOptions: {
       transaction: typeof transaction
       network?: StacksNetwork
-    } = { transaction }
+      client?: { fetch: typeof fetch }
+    } = { transaction, client: { fetch: fetchWrapper } }
     if (this.network === NetworkType.Devnet) {
       broadcastOptions.network = this.getNetworkObject()
     }
@@ -108,10 +112,14 @@ export class StackingClient implements IStackingClient {
 
     const transaction = await makeContractCall(txOptions)
 
+    // Wrap fetch in a function to preserve context when passed to broadcastTransaction
+    const fetchWrapper = (input: RequestInfo | URL, init?: RequestInit) =>
+      fetch(input, init)
     const broadcastOptions: {
       transaction: typeof transaction
       network?: StacksNetwork
-    } = { transaction }
+      client?: { fetch: typeof fetch }
+    } = { transaction, client: { fetch: fetchWrapper } }
     if (this.network === NetworkType.Devnet) {
       broadcastOptions.network = this.getNetworkObject()
     }
@@ -124,21 +132,37 @@ export class StackingClient implements IStackingClient {
     rewardCycle: number,
     extendCount: number,
     btcAddresses: { mainnet: string; testnet: string },
-    maxAmount: number
+    maxAmount: number,
+    options?: {
+      signerSignature: string
+      signerKey: string
+      authId: string
+    }
   ): Promise<string> {
     const btcAddress =
       this.network === NetworkType.Mainnet
         ? btcAddresses.mainnet
         : btcAddresses.testnet
     // Backend converts maxAmount from STX to uSTX internally
-    const signerData = await this.generateSignature(
-      rewardCycle,
-      btcAddress,
-      maxAmount, // Send maxAmount in STX (backend converts to uSTX)
-      extendCount,
-      SignatureTopic['stack-extend'],
-      this.network
-    )
+    const signerData: SignatureResponse = options
+      ? {
+          method: 'stack-extend',
+          period: extendCount,
+          rewardCycle,
+          maxAmount: Number(stxToUstx(maxAmount)),
+          signerSignature: options.signerSignature,
+          signerKey: options.signerKey,
+          authId: options.authId,
+          poxAddress: btcAddress,
+        }
+      : await this.generateSignature(
+          rewardCycle,
+          btcAddress,
+          maxAmount, // Send maxAmount in STX (backend converts to uSTX)
+          extendCount,
+          SignatureTopic['stack-extend'],
+          this.network
+        )
 
     const extendCountCv = uintCV(extendCount)
     const responseMaxAmount =
@@ -203,10 +227,14 @@ export class StackingClient implements IStackingClient {
 
     const transaction = await makeContractCall(txOptions)
 
+    // Wrap fetch in a function to preserve context when passed to broadcastTransaction
+    const fetchWrapper = (input: RequestInfo | URL, init?: RequestInit) =>
+      fetch(input, init)
     const broadcastOptions: {
       transaction: typeof transaction
       network?: StacksNetwork
-    } = { transaction }
+      client?: { fetch: typeof fetch }
+    } = { transaction, client: { fetch: fetchWrapper } }
     if (this.network === NetworkType.Devnet) {
       broadcastOptions.network = this.getNetworkObject()
     }
@@ -221,21 +249,37 @@ export class StackingClient implements IStackingClient {
     btcAddresses: { mainnet: string; testnet: string },
     startBurnHeight: number,
     period: number,
-    maxAmount: number
+    maxAmount: number,
+    options?: {
+      signerSignature: string
+      signerKey: string
+      authId: string
+    }
   ): Promise<string> {
     const btcAddress =
       this.network === NetworkType.Mainnet
         ? btcAddresses.mainnet
         : btcAddresses.testnet
 
-    const signerData = await this.generateSignature(
-      rewardCycle,
-      btcAddress,
-      maxAmount,
-      period,
-      SignatureTopic['stack-stx'],
-      this.network
-    )
+    const signerData: SignatureResponse = options
+      ? {
+          method: 'stack-stx',
+          period,
+          rewardCycle,
+          maxAmount: Number(stxToUstx(maxAmount)),
+          signerSignature: options.signerSignature,
+          signerKey: options.signerKey,
+          authId: options.authId,
+          poxAddress: btcAddress,
+        }
+      : await this.generateSignature(
+          rewardCycle,
+          btcAddress,
+          maxAmount,
+          period,
+          SignatureTopic['stack-stx'],
+          this.network
+        )
 
     const ustxAmount = stxToUstx(amount)
     const responseMaxAmount =
@@ -311,10 +355,14 @@ export class StackingClient implements IStackingClient {
 
     const transaction = await makeContractCall(txOptions)
 
+    // Wrap fetch in a function to preserve context when passed to broadcastTransaction
+    const fetchWrapper = (input: RequestInfo | URL, init?: RequestInit) =>
+      fetch(input, init)
     const broadcastOptions: {
       transaction: typeof transaction
       network?: StacksNetwork
-    } = { transaction }
+      client?: { fetch: typeof fetch }
+    } = { transaction, client: { fetch: fetchWrapper } }
     if (this.network === NetworkType.Devnet) {
       broadcastOptions.network = this.getNetworkObject()
     }
@@ -328,21 +376,37 @@ export class StackingClient implements IStackingClient {
     btcAddresses: { mainnet: string; testnet: string },
     increaseBy: number,
     maxAmount: number,
-    currentLockPeriod: number
+    currentLockPeriod: number,
+    options?: {
+      signerSignature: string
+      signerKey: string
+      authId: string
+    }
   ): Promise<string> {
     const btcAddress =
       this.network === NetworkType.Mainnet
         ? btcAddresses.mainnet
         : btcAddresses.testnet
     // Backend converts maxAmount from STX to uSTX internally
-    const signerData = await this.generateSignature(
-      rewardCycle,
-      btcAddress,
-      maxAmount, // Send maxAmount in STX (backend converts to uSTX)
-      currentLockPeriod,
-      SignatureTopic['stack-increase'],
-      this.network
-    )
+    const signerData: SignatureResponse = options
+      ? {
+          method: 'stack-increase',
+          period: currentLockPeriod,
+          rewardCycle,
+          maxAmount: Number(stxToUstx(maxAmount)),
+          signerSignature: options.signerSignature,
+          signerKey: options.signerKey,
+          authId: options.authId,
+          poxAddress: btcAddress,
+        }
+      : await this.generateSignature(
+          rewardCycle,
+          btcAddress,
+          maxAmount, // Send maxAmount in STX (backend converts to uSTX)
+          currentLockPeriod,
+          SignatureTopic['stack-increase'],
+          this.network
+        )
 
     const ustxIncreaseBy = stxToUstx(increaseBy)
     const increaseByCv = uintCV(ustxIncreaseBy)
@@ -406,10 +470,14 @@ export class StackingClient implements IStackingClient {
 
     const transaction = await makeContractCall(txOptions)
 
+    // Wrap fetch in a function to preserve context when passed to broadcastTransaction
+    const fetchWrapper = (input: RequestInfo | URL, init?: RequestInit) =>
+      fetch(input, init)
     const broadcastOptions: {
       transaction: typeof transaction
       network?: StacksNetwork
-    } = { transaction }
+      client?: { fetch: typeof fetch }
+    } = { transaction, client: { fetch: fetchWrapper } }
     if (this.network === NetworkType.Devnet) {
       broadcastOptions.network = this.getNetworkObject()
     }
@@ -432,7 +500,7 @@ export class StackingClient implements IStackingClient {
 
     const endpoint =
       network === NetworkType.Devnet
-        ? 'http://10.0.2.2:7070/'
+        ? 'http://localhost:7070/'
         : SIGNATURE_ENDPOINT
 
     const requestBody = {
@@ -444,7 +512,10 @@ export class StackingClient implements IStackingClient {
       network,
     }
 
-    const response = await fetch(endpoint, {
+    // Wrap fetch in a function to preserve context (platform-agnostic)
+    const fetchWrapper = (input: RequestInfo | URL, init?: RequestInit) =>
+      fetch(input, init)
+    const response = await fetchWrapper(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -465,14 +536,17 @@ export class StackingClient implements IStackingClient {
 
   private getNetworkObject(): StacksNetwork {
     if (this.network === NetworkType.Devnet) {
-      const baseUrl = STACKS_DEVNET_API_BASE_URL.endsWith('/')
-        ? STACKS_DEVNET_API_BASE_URL.slice(0, -1)
-        : STACKS_DEVNET_API_BASE_URL
+      const baseUrl = this.devnetBaseUrl.endsWith('/')
+        ? this.devnetBaseUrl.slice(0, -1)
+        : this.devnetBaseUrl
+      // Wrap fetch in a function to preserve context (platform-agnostic)
+      const fetchWrapper = (input: RequestInfo | URL, init?: RequestInit) =>
+        fetch(input, init)
       return createNetwork({
         network: 'devnet',
         client: {
           baseUrl,
-          fetch: fetch,
+          fetch: fetchWrapper,
         },
       })
     }

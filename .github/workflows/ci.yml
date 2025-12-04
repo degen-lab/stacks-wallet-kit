@@ -36,7 +36,7 @@ jobs:
         run: pnpm run format:check
 
       - name: Build core package
-        run: pnpm --filter @google-wallet-sdk/core build
+        run: pnpm --filter @stacks-wallet-kit/core build
 
       - name: Run Test
         run: pnpm run test

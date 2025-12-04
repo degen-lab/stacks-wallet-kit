@@ -2,7 +2,8 @@ import { StackingPool } from './types'
 
 export const STACKS_API_BASE_URL = 'https://api.hiro.so/'
 export const STACKS_TESTNET_API_BASE_URL = 'https://api.testnet.hiro.so/'
-export const STACKS_DEVNET_API_BASE_URL = 'http://10.0.2.2:3999/'
+export const STACKS_WEB_DEVNET_API_BASE_URL = 'http://localhost:3999/'
+export const STACKS_MOBILE_DEVNET_API_BASE_URL = 'http://10.0.2.2:3999/'
 
 export const GET_POX_INF0 = `v2/pox`
 export const GET_BALANCE = (address: string) =>

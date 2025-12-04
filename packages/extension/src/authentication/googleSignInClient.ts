@@ -1,4 +1,4 @@
-import { AuthError } from '@google-wallet-sdk/core'
+import { AuthError } from '@stacks-wallet-kit/core'
 import { IGoogleSignInClient } from '../interfaces/IGoogleSignInClient'
 import {
   AUTHENTICATION_URL,
@@ -110,35 +110,46 @@ export class GoogleSigninClient implements IGoogleSignInClient {
   }
 
   async logOut(): Promise<void> {
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       chrome.identity.getAuthToken({ interactive: false }, (token) => {
-        if (chrome.runtime.lastError) return reject(chrome.runtime.lastError)
-        if (!token) return resolve() // no token to remove
+        if (chrome.runtime.lastError) {
+          return reject(chrome.runtime.lastError)
+        }
 
-        fetch(REVOKE_TOKEN_URL(token))
+        if (!token) {
+          // No token to revoke, just resolve
+          return resolve()
+        }
+
+        // Revoke the token via Google OAuth API
+        const revokeUrl = REVOKE_TOKEN_URL(token)
+        fetch(revokeUrl)
           .then((response) => {
             if (!response.ok) {
-              return reject(
-                new AuthError(
-                  `Token revocation failed: ${response.status} ${response.statusText}`,
-                  'TOKEN_REVOCATION_FAILED'
-                )
+              throw new AuthError(
+                `Token revocation failed: ${response.status} ${response.statusText}`,
+                'TOKEN_REVOCATION_FAILED'
               )
             }
+            // Remove the cached token
             chrome.identity.removeCachedAuthToken({ token }, () => {
-              if (chrome.runtime.lastError)
+              if (chrome.runtime.lastError) {
                 return reject(chrome.runtime.lastError)
+              }
               resolve()
             })
           })
           .catch((error) => {
-            reject(
-              new AuthError(
-                `Token revocation failed: ${error.message}`,
-                'TOKEN_REVOCATION_FAILED',
-                error
+            if (error instanceof AuthError) {
+              reject(error)
+            } else {
+              reject(
+                new AuthError(
+                  `Token revocation failed: ${error.message}`,
+                  'TOKEN_REVOCATION_FAILED'
+                )
               )
-            )
+            }
           })
       })
     })

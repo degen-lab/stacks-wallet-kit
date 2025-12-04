@@ -1,4 +1,4 @@
-# Google Wallet SDK
+# Stacks Wallet Kit
 
 A monorepo containing platform-agnostic and platform-specific SDKs for building Stacks blockchain applications with Google authentication and wallet management.
 
@@ -7,14 +7,14 @@ A monorepo containing platform-agnostic and platform-specific SDKs for building 
 This repository is organized as a monorepo using pnpm workspaces, containing three main packages:
 
 ```
-google-wallet-sdk/
+stacks-wallet-kit/
 ├── packages/
 │   ├── core/          # Platform-agnostic core package
 │   ├── mobile/        # React Native/Expo SDK
 │   └── extension/     # Browser extension SDK
 ```
 
-### `@google-wallet-sdk/core`
+### `@stacks-wallet-kit/core`
 
 The platform-agnostic core package that provides shared functionality used by both mobile and web SDKs.
 
@@ -29,7 +29,7 @@ The platform-agnostic core package that provides shared functionality used by bo
 
 **Purpose**: Provides the foundational building blocks that can be used independently or extended by platform-specific SDKs.
 
-### `@google-wallet-sdk/mobile`
+### `@stacks-wallet-kit/mobile`
 
 React Native/Expo SDK for mobile applications.
 
@@ -41,7 +41,7 @@ React Native/Expo SDK for mobile applications.
 
 **Purpose**: Provides a ready-to-use SDK for React Native/Expo applications with mobile-optimized storage and authentication.
 
-### `@google-wallet-sdk/extension`
+### `@stacks-wallet-kit/extension`
 
 Browser extension SDK for browser extensions.
 
@@ -69,7 +69,7 @@ Both `mobile` and `extension` packages depend on `core`, ensuring consistent beh
 ### For Mobile Apps
 
 ```bash
-npm install @google-wallet-sdk/mobile
+npm install @stacks-wallet-kit/mobile
 ```
 
 See [packages/mobile/README.md](./packages/mobile/README.md) for documentation.
@@ -77,7 +77,7 @@ See [packages/mobile/README.md](./packages/mobile/README.md) for documentation.
 ### For Browser Extensions
 
 ```bash
-npm install @google-wallet-sdk/extension
+npm install @stacks-wallet-kit/extension
 ```
 
 See [packages/extension/README.md](./packages/extension/README.md) for documentation.
@@ -85,7 +85,7 @@ See [packages/extension/README.md](./packages/extension/README.md) for documenta
 ### For Custom Implementations
 
 ```bash
-npm install @google-wallet-sdk/core
+npm install @stacks-wallet-kit/core
 ```
 
 See [packages/core/README.md](./packages/core/README.md) for documentation.

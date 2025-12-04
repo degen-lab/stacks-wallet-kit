@@ -4,9 +4,12 @@
     "outDir": "./dist",
     "skipLibCheck": true,
     "types": ["react", "jest", "node"],
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "paths": {
-      "@google-wallet-sdk/core": ["../core/src/index.ts"]
+      "@stacks-wallet-kit/core": [
+        "../core/src/index.ts",
+        "../core/dist/src/index.ts"
+      ]
     }
   },
   "include": ["src", "testing"],

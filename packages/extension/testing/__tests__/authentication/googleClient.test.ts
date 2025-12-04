@@ -1,4 +1,4 @@
-import { AuthError } from '@google-wallet-sdk/core'
+import { AuthError } from '@stacks-wallet-kit/core'
 import { GoogleSigninClient } from '../../../src/authentication/googleSignInClient'
 
 const mockLaunchWebAuthFlow = jest.fn()

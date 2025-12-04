@@ -1,4 +1,4 @@
-import { AuthError } from '@google-wallet-sdk/core'
+import { AuthError } from '@stacks-wallet-kit/core'
 import { GoogleAuth } from '../../../src/auth/googleAuth'
 import {
   GoogleSignin,

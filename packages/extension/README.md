@@ -1,37 +1,35 @@
-# @stacks-wallet-kit/mobile
+# @stacks-wallet-kit/extension
 
-A React Native/Expo SDK for building Stacks blockchain applications with Google authentication and wallet management.
+A Chrome extension SDK for building Stacks blockchain applications with Google authentication and wallet management.
 
 ## Purpose
 
-This SDK enables seamless Web2 authentication for mobile apps and provides easy wallet backup to a safe place without requiring users to store or remember their mnemonic phrase. It simplifies blockchain operations by handling the complexity of parsing arguments and data, allowing developers to focus on building their applications rather than managing low-level blockchain interactions.
+This SDK enables seamless Web2 authentication for Chrome extensions and provides easy wallet backup to a safe place without requiring users to store or remember their mnemonic phrase. It simplifies blockchain operations by handling the complexity of parsing arguments and data, allowing developers to focus on building their applications rather than managing low-level blockchain interactions.
 
-The mobile SDK imports functionality from the `@stacks-wallet-kit/core` package, which is platform-agnostic and shared between this mobile SDK and the web extension SDK, ensuring consistency across platforms.
+The extension SDK imports functionality from the `@stacks-wallet-kit/core` package, which is platform-agnostic and shared between this extension SDK and the mobile SDK, ensuring consistency across platforms.
 
 ## Installation
 
 ```bash
-npm install @stacks-wallet-kit/mobile
+npm install @stacks-wallet-kit/extension
 # or
-pnpm add @stacks-wallet-kit/mobile
+pnpm add @stacks-wallet-kit/extension
 ```
 
 ## Quick Start
 
 ```typescript
-import { MobileClient, NetworkType } from '@stacks-wallet-kit/mobile'
+import { WebClient, NetworkType } from '@stacks-wallet-kit/extension'
 
-const client = new MobileClient(
-  'your-web-client-id',
-  'your-ios-client-id',
-  NetworkType.Testnet,
-  {
-    scopes: ['email', 'profile'],
-    devnetUrl: 'http://10.0.2.2:3999',
-  }
+const client = new WebClient(
+  'your-google-client-id',
+  'your-google-client-secret',
+  'https://your-extension-id.chromiumapp.org/',
+  NetworkType.Testnet
 )
 
-client.setNetwork(NetworkType.Devnet)
+// IMPORTANT: Set encryption password FIRST before any operations
+await client.setEncryptionPassword('your-encryption-password')
 
 const wallet = await client.createWallet() // Optional passphrase
 
@@ -41,21 +39,45 @@ const account = accounts[0]
 const balance = await client.getBalance(account)
 ```
 
-## MobileClient Configuration
+## ⚠️ Important: Password Setup
+
+**You MUST call `setEncryptionPassword()` before performing any wallet operations.** This is required because:
+
+1. The `StorageManager` uses encryption to securely store wallet data in Chrome's storage
+2. Without setting the password, the storage manager cannot encrypt or decrypt data
+3. The same password you use for `setEncryptionPassword()` must be used when creating Google Drive backups
+
+### Password Flow
+
+```typescript
+// 1. Set encryption password first (required before any operations)
+await client.setEncryptionPassword('my-secure-password')
+
+// 2. Now you can perform wallet operations
+const wallet = await client.createWallet()
+
+// 3. When backing up to Google Drive, use the SAME password
+await client.backupWallet('my-secure-password') // Must match encryption password
+```
+
+**Note:** After a Chrome extension refresh, the password is not stored in memory. You must call `setEncryptionPassword()` again to decrypt and access stored data.
+
+## WebClient Configuration
 
 ### Constructor Parameters
 
 ```typescript
-new MobileClient(
-  webClientId: string,        // Required: Google OAuth web client ID
-  iosClientId: string,        // Required: Google OAuth iOS client ID
-  network: NetworkType,       // Required: Initial network (Mainnet, Testnet, or Devnet)
-  configOptions?: {           // Optional: Configuration options
-    scopes?: string[]         // Optional: Additional OAuth scopes
-    storageManager?: IStorageManager  // Optional: Custom storage manager
-    mainnetUrl?: string       // Optional: Custom mainnet API URL
-    testnetUrl?: string       // Optional: Custom testnet API URL
-    devnetUrl?: string        // Optional: Custom devnet API URL
+new WebClient(
+  googleClientId: string,                 // Required: Google OAuth client ID
+  googleClientSecret: string,             // Required: Google OAuth client secret
+  redirectUri: string,                    // Required: OAuth redirect URI (e.g., 'https://your-extension-id.chromiumapp.org/')
+  network: NetworkType,                   // Required: Initial network (Mainnet, Testnet, or Devnet)
+  configOptions?: {                       // Optional: Configuration options
+    scopes?: string[]                     // Optional: Additional OAuth scopes
+    storageManager?: IWebStorageManager   // Optional: Custom storage manager
+    mainnetUrl?: string                   // Optional: Custom mainnet API URL
+    testnetUrl?: string                   // Optional: Custom testnet API URL
+    devnetUrl?: string                    // Optional: Custom devnet API URL
   }
 )
 ```
@@ -64,9 +86,7 @@ new MobileClient(
 
 **Storage Manager:**
 
-- If not provided, `MobileClient` automatically selects a storage implementation:
-  - **Expo**: Uses `SecureStore` (Expo SecureStore)
-  - **React Native**: Uses `KeyChainStorage` (react-native-keychain)
+- If not provided, `WebClient` automatically uses `StorageManager` which stores encrypted data in Chrome's `chrome.storage.local` API
 
 **OAuth Scopes:**
 
@@ -77,18 +97,13 @@ new MobileClient(
 
 - **Mainnet**: `https://api.hiro.so/`
 - **Testnet**: `https://api.testnet.hiro.so/`
-- **Devnet**: `http://10.0.2.2:3999/` (Android emulator compatible)
-
-**Google Sign-In Configuration:**
-
-- `offlineAccess: true` - Enables refresh token support
-- `forceCodeForRefreshToken: true` - Forces code exchange for refresh tokens
+- **Devnet**: `http://localhost:3999/`
 
 ### Internal Components
 
-`MobileClient` automatically initializes the following components:
+`WebClient` automatically initializes the following components:
 
-- **Authentication**: `GoogleAuth` with provided client IDs and scopes
+- **Authentication**: `AuthenticationManager` with `GoogleSigninClient`
 - **Backup Manager**: `BackupManager` with `GoogleBackupClient`
 - **Wallet Manager**: `WalletManager` for wallet operations
 - **Encryption Manager**: `EncryptionManager` for encryption/decryption
@@ -96,6 +111,23 @@ new MobileClient(
 - **Stacking Client**: `StackingClient` with configured network
 
 ## API Reference
+
+### Password Management
+
+#### `setEncryptionPassword(password: string)`
+
+**⚠️ REQUIRED:** Set the encryption password for the storage manager. Must be called before any wallet operations.
+
+```typescript
+await client.setEncryptionPassword('your-encryption-password')
+```
+
+**Important Notes:**
+
+- This must be called before any operations that read or write to storage
+- The password is used to encrypt/decrypt all stored wallet data
+- After extension refresh, you must call this again to access stored data
+- Use the same password when calling `backupWallet()`
 
 ### Authentication
 
@@ -155,11 +187,17 @@ const newAccount: WalletAccount = await client.createAccount()
 
 #### `backupWallet(password: string)`
 
-Backup the wallet to Google Drive.
+Backup the wallet to Google Drive. **The password must match the encryption password set with `setEncryptionPassword()`.**
 
 ```typescript
-await client.backupWallet('wallet-password')
+// First set encryption password
+await client.setEncryptionPassword('my-password')
+
+// Then backup using the SAME password
+await client.backupWallet('my-password')
 ```
+
+**Throws `InvalidPasswordError` if the password doesn't match the encryption password.**
 
 #### `retrieveWallet(password: string)`
 
@@ -320,12 +358,12 @@ const account: WalletAccount = accounts[0]
 // Basic usage (signature generated by backend)
 const txid: string = await client.stackExtend(
   account,
-  2, // number of cycles to extend
+  1, // extend by 1 cycle
   1000 // max amount in STX
 ) // Returns: string
 
 // With custom signer options (skip backend signature generation)
-const txid2: string = await client.stackExtend(account, 2, 1000, {
+const txid2: string = await client.stackExtend(account, 1, 1000, {
   signerSignature: '0x...', // Optional: custom signer signature
   signerKey: '0x...', // Optional: custom signer key
   authId: '123', // Optional: custom auth ID
@@ -334,7 +372,7 @@ const txid2: string = await client.stackExtend(account, 2, 1000, {
 
 ##### `stackIncrease(account, increaseBy, maxAmount, currentLockPeriod, options?)`
 
-Increase the amount being stacked.
+Increase the stacking amount.
 
 **Note:** If `options` is not provided, the signature will be automatically generated by a backend service for mainnet and testnet networks.
 
@@ -345,7 +383,7 @@ const account: WalletAccount = accounts[0]
 // Basic usage (signature generated by backend)
 const txid: string = await client.stackIncrease(
   account,
-  500, // amount to increase by in STX
+  500, // increase by 500 STX
   1500, // max amount in STX
   1 // current lock period
 ) // Returns: string
@@ -360,30 +398,23 @@ const txid2: string = await client.stackIncrease(account, 500, 1500, 1, {
 
 #### Stacking with a Pool
 
-##### `delegateSTX(account, amount, delegateTo, untilBurnHeight?)`
+##### `delegateSTX(account, amount, poolAddress, untilBurnHeight)`
 
 Delegate STX to a stacking pool.
 
 ```typescript
-import { StackingPool } from '@stacks-wallet-kit/core'
-
-const pool: StackingPool = {
-  name: 'Pool Name',
-  address: 'SP...',
-}
-
 const accounts: WalletAccount[] = await client.getWalletAccounts()
 const account: WalletAccount = accounts[0]
 
 const txid: string = await client.delegateSTX(
   account,
   1000, // amount to delegate in STX
-  pool, // stacking pool
-  100000 // optional: until burn height
+  'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM', // pool address
+  100000 // until burn height
 ) // Returns: string
 ```
 
-##### `revokeDelegation(account)`
+##### `revokeDelegation(account, poolAddress)`
 
 Revoke STX delegation from a stacking pool.
 
@@ -391,216 +422,79 @@ Revoke STX delegation from a stacking pool.
 const accounts: WalletAccount[] = await client.getWalletAccounts()
 const account: WalletAccount = accounts[0]
 
-const txid: string = await client.revokeDelegation(account) // Returns: string
+const txid: string = await client.revokeDelegation(
+  account,
+  'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM' // pool address
+) // Returns: string
 ```
 
 ### Network
 
-#### `setNetwork(network)`
+#### `setNetwork(network: NetworkType)`
 
-Set the network for all operations.
+Change the active network.
 
 ```typescript
-import { NetworkType } from '@stacks-wallet-kit/mobile'
-
 client.setNetwork(NetworkType.Mainnet)
 client.setNetwork(NetworkType.Testnet)
 client.setNetwork(NetworkType.Devnet)
 ```
 
-## Configuration
+## Custom Storage Manager
 
-### Android Emulator Setup
-
-When testing on Android emulator, use `10.0.2.2` instead of `localhost` for devnet URLs:
+You can provide a custom storage manager that implements `IWebStorageManager` from `@stacks-wallet-kit/core`:
 
 ```typescript
-const client: MobileClient = new MobileClient(
-  'web-client-id',
-  'ios-client-id',
-  NetworkType.Devnet,
-  {
-    devnetUrl: 'http://10.0.2.2:3999', // Android emulator host
-  }
-)
-```
+import { IWebStorageManager } from '@stacks-wallet-kit/core'
 
-### Custom Storage Manager
-
-You can provide a custom storage manager by implementing the `IStorageManager` interface from the `@stacks-wallet-kit/core` package. Make sure to install the core package:
-
-```bash
-npm install @stacks-wallet-kit/core
-```
-
-```typescript
-import { IStorageManager } from '@stacks-wallet-kit/core'
-
-class CustomStorage implements IStorageManager {
-  async setItem<T>(key: string, value: T): Promise<void> {
+class CustomStorageManager implements IWebStorageManager {
+  async setPassword(password: string): Promise<void> {
     // Your implementation
   }
 
-  async getItem<T>(key: string): Promise<T | null> {
+  async checkEncryptionPasswordMatches(password: string): Promise<boolean> {
     // Your implementation
   }
 
-  async removeItem(key: string): Promise<void> {
-    // Your implementation
-  }
-
-  async clear(): Promise<void> {
-    // Your implementation
-  }
+  // ... implement other IStorageManager methods
 }
 
-const client = new MobileClient(
-  'web-client-id',
-  'ios-client-id',
+const customStorage = new CustomStorageManager()
+const client = new WebClient(
+  'client-id',
+  'client-secret',
+  'redirect-uri',
   NetworkType.Testnet,
   {
-    storageManager: new CustomStorage(),
+    storageManager: customStorage,
   }
 )
 ```
+
+**Note:** Your custom storage manager must implement `IWebStorageManager` which includes `setPassword()` and `checkEncryptionPasswordMatches()` methods for password management.
+
+## Prerequisites
+
+- Node.js 22+
+- Chrome extension development environment
+- Google OAuth credentials (Client ID and Client Secret)
+- Google Drive API access (for backup functionality)
 
 ## Types
 
-### NetworkType
+All types are exported from `@stacks-wallet-kit/core`. Common types include:
 
-```typescript
-enum NetworkType {
-  Mainnet = 'mainnet',
-  Testnet = 'testnet',
-  Devnet = 'devnet',
-}
-```
+- `Wallet` - Wallet object containing mnemonic and accounts
+- `WalletAccount` - Individual account in a wallet
+- `NetworkType` - Network type enum (Mainnet, Testnet, Devnet)
+- `InvalidPasswordError` - Error thrown when password validation fails
+- `PasswordNotSetError` - Error thrown when password is not set
 
-### WalletAccount
+## Error Handling
 
-```typescript
-interface WalletAccount {
-  index: number
-  publicKey: string
-  addresses: {
-    mainnet: string
-    testnet: string
-  }
-}
-```
+The SDK throws specific error types for different scenarios:
 
-### StackingPool
-
-```typescript
-interface StackingPool {
-  name: string
-  address: string
-}
-```
-
-## Examples
-
-### Complete Wallet Flow
-
-```typescript
-import { MobileClient, NetworkType } from '@stacks-wallet-kit/mobile'
-import { Wallet, WalletAccount } from '@stacks-wallet-kit/core'
-
-async function walletFlow(): Promise<void> {
-  const client: MobileClient = new MobileClient(
-    'web-client-id',
-    'ios-client-id',
-    NetworkType.Devnet,
-    { devnetUrl: 'http://10.0.2.2:3999' }
-  )
-
-  const { hasBackup }: { accessToken: string; hasBackup: boolean } =
-    await client.loginWithGoogle()
-
-  let wallet: Wallet
-  if (hasBackup) {
-    const result: { wallet: Wallet; mnemonic: string } =
-      await client.retrieveWallet('password')
-    wallet = result.wallet
-  } else {
-    wallet = await client.createWallet() // Optional passphrase
-    await client.backupWallet('password')
-  }
-
-  const accounts: WalletAccount[] = await client.getWalletAccounts()
-  const account: WalletAccount = accounts[0]
-
-  const balance: number = await client.getBalance(account)
-  if (balance > 0.01) {
-    const txid: string = await client.sendStx(
-      0,
-      'ST1AWHANXSGZ3SY8XQC2J7S18E22KJJW9B3JT2T54',
-      0.01,
-      NetworkType.Devnet,
-      'Test payment'
-    )
-  }
-}
-```
-
-### NFT Transfer Example
-
-```typescript
-import { MobileClient, NetworkType } from '@stacks-wallet-kit/mobile'
-import { WalletAccount } from '@stacks-wallet-kit/core'
-
-async function transferNFT(): Promise<void> {
-  const client: MobileClient = new MobileClient(
-    'web-client-id',
-    'ios-client-id',
-    NetworkType.Devnet
-  )
-
-  const accounts: WalletAccount[] = await client.getWalletAccounts()
-  const account: WalletAccount = accounts[0]
-
-  const txid: string = await client.transferNFT(
-    account.index,
-    'SP1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ.my-nft',
-    '1',
-    'ST1AWHANXSGZ3SY8XQC2J7S18E22KJJW9B3JT2T54',
-    NetworkType.Devnet
-  )
-}
-```
-
-### Custom Contract Call Example
-
-```typescript
-import { MobileClient, NetworkType } from '@stacks-wallet-kit/mobile'
-import {
-  uintCV,
-  standardPrincipalCV,
-  ClarityValue,
-  PostConditionMode,
-} from '@stacks/transactions'
-
-async function customContractCall(): Promise<void> {
-  const client: MobileClient = new MobileClient(
-    'web-client-id',
-    'ios-client-id',
-    NetworkType.Devnet
-  )
-
-  const contractAddress: string =
-    'SP1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ.my-contract'
-  const functionName: string = 'my-function'
-  const functionArgs: ClarityValue[] = [
-    uintCV(100),
-    standardPrincipalCV('ST1AWHANXSGZ3SY8XQC2J7S18E22KJJW9B3JT2T54'),
-  ]
-
-  // With optional post condition mode
-  const txid: string = await client.makeContractCall(
-    contractAddress,
-    functionName,
-    functionArgs,
-    PostConditionMode.Allow
-  )
-}
-```
+- `InvalidPasswordError` - Thrown when password doesn't match during backup or validation
+- `PasswordNotSetError` - Thrown when trying to access storage without setting password first
+- `AuthError` - Thrown during authentication failures
+- `WalletNotStoredError` - Thrown when wallet operations are attempted without a stored wallet

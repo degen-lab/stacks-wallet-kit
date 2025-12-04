@@ -1,5 +1,9 @@
 import { StorageManager } from '../../../src/storage/storageManager'
 import { mockEncrypt, mockDecrypt } from '../../__mocks__/encryption'
+import {
+  PasswordNotSetError,
+  InvalidPasswordError,
+} from '@stacks-wallet-kit/core'
 
 interface ChromeMock {
   storage: {
@@ -21,11 +25,23 @@ describe('Web storage manager unit tests', () => {
   const password = 'test-password'
   let storageManager: StorageManager
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    // Clear chrome storage first to ensure clean state
+    const { mockStorage } = require('../../__mocks__/chrome')
+    Object.keys(mockStorage).forEach((key) => delete mockStorage[key])
+
     jest.clearAllMocks()
     getChrome().runtime.lastError = null
     getChrome().storage.local.clear()
-    storageManager = new StorageManager(password, mockEncrypt, mockDecrypt)
+    storageManager = new StorageManager(mockEncrypt, mockDecrypt)
+    await storageManager.setPassword(password)
+  })
+
+  afterEach(() => {
+    // Clear all data after each test to prevent leakage
+    const { mockStorage } = require('../../__mocks__/chrome')
+    Object.keys(mockStorage).forEach((key) => delete mockStorage[key])
+    getChrome().storage.local.clear()
   })
 
   describe('setItem', () => {
@@ -91,11 +107,8 @@ describe('Web storage manager unit tests', () => {
         .fn()
         .mockRejectedValueOnce(new Error('Encryption failed'))
 
-      const errorStorageManager = new StorageManager(
-        password,
-        errorEncrypt,
-        mockDecrypt
-      )
+      const errorStorageManager = new StorageManager(errorEncrypt, mockDecrypt)
+      await errorStorageManager.setPassword(password)
 
       await expect(
         errorStorageManager.setItem('test-key', 'test-value')
@@ -147,34 +160,63 @@ describe('Web storage manager unit tests', () => {
     })
 
     it('should handle decryption errors', async () => {
+      // Create a storage manager with a normal decrypt for setup
+      const normalStorageManager = new StorageManager(mockEncrypt, mockDecrypt)
+      await normalStorageManager.setPassword(password)
+      await normalStorageManager.setItem('test-key', 'test-value')
+
+      // Now create one with a decrypt that works for the first call (password check) but fails for others
+      let callCount = 0
       const errorDecrypt = jest
         .fn()
-        .mockRejectedValueOnce(new Error('Decryption failed'))
+        .mockImplementation(async (encryptedValue: string, pwd: string) => {
+          callCount++
+          // First call is for password check in setPassword - let it work
+          if (callCount === 1) {
+            return mockDecrypt(encryptedValue, pwd)
+          }
+          // Subsequent calls should fail
+          throw new Error('Decryption failed')
+        })
 
-      const errorStorageManager = new StorageManager(
-        password,
-        mockEncrypt,
-        errorDecrypt
-      )
+      const errorStorageManager = new StorageManager(mockEncrypt, errorDecrypt)
+      // Set password - this should work because decrypt works for first call
+      await errorStorageManager.setPassword(password)
 
-      await storageManager.setItem('test-key', 'test-value')
-
+      // Now try to get the item - the decrypt should fail
       await expect(errorStorageManager.getItem('test-key')).rejects.toThrow(
         'Decryption failed'
       )
     })
 
     it('should handle invalid JSON after decryption', async () => {
-      const invalidDecrypt = jest.fn().mockResolvedValueOnce('invalid-json-{')
+      // Create a storage manager with a normal decrypt for setup
+      const normalStorageManager = new StorageManager(mockEncrypt, mockDecrypt)
+      await normalStorageManager.setPassword(password)
+      await normalStorageManager.setItem('test-key', 'test-value')
+
+      // Now create one with a decrypt that works for the first call (password check) but returns invalid JSON for others
+      let callCount = 0
+      const invalidDecrypt = jest
+        .fn()
+        .mockImplementation(async (encryptedValue: string, pwd: string) => {
+          callCount++
+          // First call is for password check in setPassword - let it work
+          if (callCount === 1) {
+            return mockDecrypt(encryptedValue, pwd)
+          }
+          // Subsequent calls should return invalid JSON
+          return 'invalid-json-{'
+        })
 
       const invalidStorageManager = new StorageManager(
-        password,
         mockEncrypt,
         invalidDecrypt
       )
+      // Set password - this should work because decrypt works for first call
+      await invalidStorageManager.setPassword(password)
 
-      await storageManager.setItem('test-key', 'test-value')
-
+      // Now try to get it - the decrypt should return invalid JSON
       await expect(invalidStorageManager.getItem('test-key')).rejects.toThrow()
     })
 
@@ -271,20 +313,39 @@ describe('Web storage manager unit tests', () => {
     })
 
     it('should use correct password for encryption and decryption', async () => {
+      // Clear chrome storage to ensure a fresh start for this test
+      getChrome().storage.local.clear()
+
       const customPassword = 'custom-password'
-      const customStorageManager = new StorageManager(
-        customPassword,
-        mockEncrypt,
-        mockDecrypt
+      // Create fresh mocks that actually implement the encryption/decryption logic
+      const customEncrypt = jest.fn(
+        async (value: string, pwd: string): Promise<string> => {
+          return `encrypted:${Buffer.from(value).toString('base64')}:${pwd}`
+        }
       )
+      const customDecrypt = jest.fn(
+        async (encryptedValue: string, pwd: string): Promise<string> => {
+          const match = encryptedValue.match(/^encrypted:(.+):(.+)$/)
+          if (!match || match[2] !== pwd) {
+            throw new Error('Decryption failed')
+          }
+          return Buffer.from(match[1], 'base64').toString('utf-8')
+        }
+      )
+
+      const customStorageManager = new StorageManager(
+        customEncrypt,
+        customDecrypt
+      )
+      await customStorageManager.setPassword(customPassword)
 
       await customStorageManager.setItem('test', 'value')
 
-      expect(mockEncrypt).toHaveBeenCalledWith('"value"', customPassword)
+      expect(customEncrypt).toHaveBeenCalledWith('"value"', customPassword)
 
       const value = await customStorageManager.getItem<string>('test')
 
-      expect(mockDecrypt).toHaveBeenCalledWith(
+      expect(customDecrypt).toHaveBeenCalledWith(
         expect.any(String),
         customPassword
       )

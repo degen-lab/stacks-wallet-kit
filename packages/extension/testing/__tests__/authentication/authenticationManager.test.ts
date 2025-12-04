@@ -1,4 +1,4 @@
-import { AuthError, IStorageManager } from '@google-wallet-sdk/core'
+import { AuthError, IStorageManager } from '@stacks-wallet-kit/core'
 import { AuthenticationManager } from '../../../src/authentication/authenticationManager'
 import { IGoogleSignInClient } from '../../../src/interfaces/IGoogleSignInClient'
 
@@ -227,11 +227,12 @@ describe('Authentication manager unit tests', () => {
   describe('signInSilently', () => {
     it('should successfully sign in silently with refresh token', async () => {
       const newAccessToken = 'new-access-token'
+      ;(storageManager.getItem as jest.Mock).mockResolvedValueOnce(refreshToken)
       mockGoogleSignInClient.getAccessToken.mockResolvedValueOnce(
         newAccessToken
       )
 
-      const result = await authenticationManager.signInSilently(refreshToken)
+      const result = await authenticationManager.signInSilently()
 
       expect(result).toBe(newAccessToken)
       expect(mockGoogleSignInClient.getAccessToken).toHaveBeenCalledWith(
@@ -260,12 +261,12 @@ describe('Authentication manager unit tests', () => {
     })
 
     it('should throw AuthError when refresh token is empty string', async () => {
-      await expect(authenticationManager.signInSilently('')).rejects.toThrow(
+      await expect(authenticationManager.signInSilently()).rejects.toThrow(
         AuthError
       )
 
       try {
-        await authenticationManager.signInSilently('')
+        await authenticationManager.signInSilently()
       } catch (error) {
         if (isAuthError(error)) {
           expect(error.code).toBe('REFRESH_TOKEN_REQUIRED')
@@ -277,11 +278,12 @@ describe('Authentication manager unit tests', () => {
 
     it('should propagate errors from getAccessToken', async () => {
       const error = new Error('Token refresh failed')
+      ;(storageManager.getItem as jest.Mock).mockResolvedValueOnce(refreshToken)
       mockGoogleSignInClient.getAccessToken.mockRejectedValueOnce(error)
 
-      await expect(
-        authenticationManager.signInSilently(refreshToken)
-      ).rejects.toThrow('Token refresh failed')
+      await expect(authenticationManager.signInSilently()).rejects.toThrow(
+        'Token refresh failed'
+      )
     })
 
     it('should handle AuthError from getAccessToken', async () => {
@@ -289,10 +291,11 @@ describe('Authentication manager unit tests', () => {
         'Token exchange failed',
         'TOKEN_EXCHANGE_FAILED'
       )
+      ;(storageManager.getItem as jest.Mock).mockResolvedValueOnce(refreshToken)
       mockGoogleSignInClient.getAccessToken.mockRejectedValueOnce(error)
 
       try {
-        await authenticationManager.signInSilently(refreshToken)
+        await authenticationManager.signInSilently()
       } catch (e) {
         if (isAuthError(e)) {
           expect(e.code).toBe('TOKEN_EXCHANGE_FAILED')
@@ -312,9 +315,10 @@ describe('Authentication manager unit tests', () => {
         storageManager
       )
 
+      ;(storageManager.getItem as jest.Mock).mockResolvedValueOnce(refreshToken)
       mockGoogleSignInClient.getAccessToken.mockResolvedValueOnce(accessToken)
 
-      await customManager.signInSilently(refreshToken)
+      await customManager.signInSilently()
 
       expect(mockGoogleSignInClient.getAccessToken).toHaveBeenCalledWith(
         customClientId,
@@ -360,13 +364,13 @@ describe('Authentication manager unit tests', () => {
       })
       await authenticationManager.signIn()
 
-      // Silent sign in with refresh token
+      // Silent sign in with refresh token (stored from signIn)
       const newAccessToken = 'new-access-token'
+      ;(storageManager.getItem as jest.Mock).mockResolvedValueOnce(refreshToken)
       mockGoogleSignInClient.getAccessToken.mockResolvedValueOnce(
         newAccessToken
       )
-      const silentResult =
-        await authenticationManager.signInSilently(refreshToken)
+      const silentResult = await authenticationManager.signInSilently()
       expect(silentResult).toBe(newAccessToken)
     })
 

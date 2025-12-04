@@ -10,14 +10,24 @@ export interface IStackingClient {
     btcAddress: { mainnet: string; testnet: string },
     startBurnHeight: number,
     period: number,
-    maxAmount: number
+    maxAmount: number,
+    options?: {
+      signerSignature: string
+      signerKey: string
+      authId: string
+    }
   ): Promise<string>
   stackExtend(
     senderKey: string,
     rewardCycle: number,
     extendCount: number,
     btcAddress: { mainnet: string; testnet: string },
-    maxAmount: number
+    maxAmount: number,
+    options?: {
+      signerSignature: string
+      signerKey: string
+      authId: string
+    }
   ): Promise<string>
   stackIncrease(
     senderKey: string,
@@ -25,7 +35,12 @@ export interface IStackingClient {
     btcAddress: { mainnet: string; testnet: string },
     increaseBy: number,
     maxAmount: number,
-    currentLockPeriod: number
+    currentLockPeriod: number,
+    options?: {
+      signerSignature: string
+      signerKey: string
+      authId: string
+    }
   ): Promise<string>
   // Stacking with a pool
   delegateStx(

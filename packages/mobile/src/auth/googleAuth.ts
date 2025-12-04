@@ -6,7 +6,7 @@ import {
   PlayServicesNotAvailableError,
   SignOutError,
   TokenRefreshError,
-} from '@google-wallet-sdk/core'
+} from '@stacks-wallet-kit/core'
 import {
   GoogleSignin,
   isErrorWithCode,
@@ -26,8 +26,7 @@ export class GoogleAuth implements IAuthentication {
     })
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async signInSilently(_refreshToken?: string): Promise<string> {
+  async signInSilently(): Promise<string> {
     await GoogleSignin.signInSilently()
     const { accessToken } = await GoogleSignin.getTokens()
     return accessToken

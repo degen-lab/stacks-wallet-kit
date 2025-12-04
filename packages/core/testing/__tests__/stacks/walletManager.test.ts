@@ -121,11 +121,15 @@ describe('Wallet manager unit tests', () => {
     })
 
     it('should create different wallets with same password (random mnemonic)', async () => {
-      const { wallet: wallet1 } =
+      const { wallet: wallet1, mnemonic: mnemonic1 } =
         await walletManager.createWallet('same-password')
-      const { wallet: wallet2 } =
+      const { wallet: wallet2, mnemonic: mnemonic2 } =
         await walletManager.createWallet('same-password')
 
+      // First verify that different mnemonics were generated (this should always be true)
+      expect(mnemonic1).not.toBe(mnemonic2)
+
+      // Different mnemonics should always produce different addresses
       expect(wallet1.accounts[0].addresses.mainnet).not.toBe(
         wallet2.accounts[0].addresses.mainnet
       )
@@ -141,12 +145,22 @@ describe('Wallet manager unit tests', () => {
         walletManager.createWallet('password3'),
       ])
 
+      // First verify that different mnemonics were generated (this should always be true)
+      const mnemonics = wallets.map((w) => w.mnemonic)
+      const uniqueMnemonics = new Set(mnemonics)
+      expect(uniqueMnemonics.size).toBe(3)
+
+      // Different mnemonics should always produce different addresses
       const addresses = wallets.map(
         (w) => w.wallet.accounts[0].addresses.mainnet
       )
       const uniqueAddresses = new Set(addresses)
 
       expect(uniqueAddresses.size).toBe(3)
+      // Verify each wallet has a different address
+      expect(addresses[0]).not.toBe(addresses[1])
+      expect(addresses[1]).not.toBe(addresses[2])
+      expect(addresses[0]).not.toBe(addresses[2])
     })
   })
 
@@ -187,12 +201,25 @@ describe('Wallet manager unit tests', () => {
         walletWithSecondAccount
       )
 
+      // Verify we have 3 accounts
+      expect(walletWithThirdAccount.accounts).toHaveLength(3)
+
+      // Verify account indices are correct
+      expect(walletWithThirdAccount.accounts[0].index).toBe(0)
+      expect(walletWithThirdAccount.accounts[1].index).toBe(1)
+      expect(walletWithThirdAccount.accounts[2].index).toBe(2)
+
       const publicKeys = walletWithThirdAccount.accounts.map(
         (acc) => acc.publicKey
       )
       const uniquePublicKeys = new Set(publicKeys)
 
+      // All public keys should be unique
       expect(uniquePublicKeys.size).toBe(3)
+      // Verify each account has a different public key
+      expect(publicKeys[0]).not.toBe(publicKeys[1])
+      expect(publicKeys[1]).not.toBe(publicKeys[2])
+      expect(publicKeys[0]).not.toBe(publicKeys[2])
     })
 
     it('should generate unique mainnet addresses for each account', async () => {

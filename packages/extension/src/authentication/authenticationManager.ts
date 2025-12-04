@@ -2,7 +2,7 @@ import {
   AuthError,
   IAuthentication,
   IStorageManager,
-} from '@google-wallet-sdk/core'
+} from '@stacks-wallet-kit/core'
 import { IGoogleSignInClient } from '../interfaces/IGoogleSignInClient'
 
 export class AuthenticationManager implements IAuthentication {
@@ -28,7 +28,10 @@ export class AuthenticationManager implements IAuthentication {
   }
 
   async signOut(): Promise<void> {
+    // Call the Google sign-in client's logout to revoke tokens
     await this.googleSignInClient.logOut()
+    // Clear the stored refresh token from storage
+    await this.storageManager.removeItem('refreshToken')
   }
 
   async getAccessToken(refreshToken: string): Promise<string> {
@@ -39,14 +42,17 @@ export class AuthenticationManager implements IAuthentication {
     )
   }
 
-  async signInSilently(refreshToken?: string): Promise<string> {
-    if (!refreshToken) {
+  async signInSilently(): Promise<string> {
+    const storedRefreshToken =
+      await this.storageManager.getItem<string>('refreshToken')
+
+    if (!storedRefreshToken) {
       throw new AuthError('Refresh token is required', 'REFRESH_TOKEN_REQUIRED')
     }
     return await this.googleSignInClient.getAccessToken(
       this.googleClientId,
       this.googleClientSecret,
-      refreshToken
+      storedRefreshToken
     )
   }
 }

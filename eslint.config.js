@@ -42,16 +42,16 @@ export default defineConfig([
           patterns: [
             {
               group: [
-                '@google-wallet-sdk/core/*',
-                '@google-wallet-sdk/core/src/**',
+                '@stacks-wallet-kit/core/*',
+                '@stacks-wallet-kit/core/src/**',
               ],
               message:
-                'Import only from "@google-wallet-sdk/core", not from internal paths. Use only what is exported from the core package index.',
+                'Import only from "@stacks-wallet-kit/core", not from internal paths. Use only what is exported from the core package index.',
             },
             {
               group: ['../../core/src/**', '../../../core/src/**'],
               message:
-                'Do not use relative imports to core internal paths. Import from "@google-wallet-sdk/core" instead.',
+                'Do not use relative imports to core internal paths. Import from "@stacks-wallet-kit/core" instead.',
             },
           ],
         },

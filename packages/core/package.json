@@ -1,5 +1,5 @@
 {
-  "name": "@google-wallet-sdk/core",
+  "name": "@stacks-wallet-kit/core",
   "version": "1.0.0",
   "main": "./dist/src/index.js",
   "type": "module",
@@ -29,7 +29,6 @@
     "@stacks/encryption": "^7.2.0",
     "@stacks/network": "^7.2.0",
     "@stacks/stacking": "^7.3.0",
-    "@stacks/transactions": "^7.3.0",
     "@stacks/wallet-sdk": "^7.2.0",
     "bech32": "^2.0.0",
     "bs58check": "^4.0.0",
@@ -37,6 +36,9 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "peerDependencies": {
+    "@stacks/transactions": "^7.3.0"
   },
   "devDependencies": {
     "@types/node": "^24.10.0"

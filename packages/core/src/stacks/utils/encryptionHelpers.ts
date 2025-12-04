@@ -117,3 +117,48 @@ export function decryptMnemonic(
   const mnemonic = mnemonicCypher.decrypt(fromBase64(encryptedMnemonic))
   return new TextDecoder().decode(mnemonic)
 }
+
+export async function encryptData(
+  value: string,
+  password: string
+): Promise<string> {
+  const salt = randomBytes(16)
+  const nonce = randomBytes(24)
+
+  const passwordBytes = new TextEncoder().encode(password)
+  const key = pbkdf2(sha256, passwordBytes, salt, {
+    c: 100000,
+    dkLen: 32,
+  })
+
+  const cipher = xchacha20poly1305(key, nonce)
+  const encrypted = cipher.encrypt(new TextEncoder().encode(value))
+
+  return `${toBase64(salt)}:${toBase64(nonce)}:${toBase64(encrypted)}`
+}
+
+export async function decryptData(
+  encryptedValue: string,
+  password: string
+): Promise<string> {
+  const [saltB64, nonceB64, encryptedB64] = encryptedValue.split(':')
+
+  if (!saltB64 || !nonceB64 || !encryptedB64) {
+    throw new Error('Invalid encrypted data format')
+  }
+
+  const salt = fromBase64(saltB64)
+  const nonce = fromBase64(nonceB64)
+  const encrypted = fromBase64(encryptedB64)
+
+  const passwordBytes = new TextEncoder().encode(password)
+  const key = pbkdf2(sha256, passwordBytes, salt, {
+    c: 100000,
+    dkLen: 32,
+  })
+
+  const cipher = xchacha20poly1305(key, nonce)
+  const decrypted = cipher.decrypt(encrypted)
+
+  return new TextDecoder().decode(decrypted)
+}
