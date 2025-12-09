@@ -1,6 +1,10 @@
 {
   "name": "@degenlab/stacks-wallet-kit-extension",
   "version": "1.0.1",
+  "repository": {
+    "url": "git+https://github.com/degen-lab/stacks-wallet-kit",
+    "type": "git"
+  },
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
   "type": "module",
