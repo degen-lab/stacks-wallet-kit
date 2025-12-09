@@ -7,7 +7,7 @@ import {
   SignOutError,
   TokenRefreshError,
 } from '@degenlab/stacks-wallet-kit-core'
-import {  
+import {
   GoogleSignin,
   isErrorWithCode,
   statusCodes,
