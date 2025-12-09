@@ -15,8 +15,6 @@ jobs:
   publish:
     name: Publish Package
     runs-on: ubuntu-latest
-    needs:
-      - run-tests
     steps:
       - name: Checkout Code
         id: checkout_code
