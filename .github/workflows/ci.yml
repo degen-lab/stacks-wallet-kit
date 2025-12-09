@@ -51,7 +51,7 @@ jobs:
             exit 0
           fi
 
-          npm publish --provenance --access public
+          pnpm publish --no-git-checks --access public
         env:
           NPM_CONFIG_PROVENANCE: true
 
@@ -75,7 +75,7 @@ jobs:
             exit 0
           fi
 
-          npm publish --provenance --access public
+          pnpm publish --no-git-checks --access public
         env:
           NPM_CONFIG_PROVENANCE: true
 
@@ -91,6 +91,6 @@ jobs:
             exit 0
           fi
 
-          npm publish --provenance --access public
+          pnpm publish --no-git-checks --access public
         env:
           NPM_CONFIG_PROVENANCE: true
