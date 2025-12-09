@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - develop
-    paths-ignore:
-      - '**.yml'
 
 permissions:
   contents: read
@@ -33,6 +31,15 @@ jobs:
       - name: Publish core to npm
         run: |
           cd packages/core
+
+          VERSION=$(node -p "require('./package.json').version")
+          PKG=$(node -p "require('./package.json').name")
+      
+          if npm view $PKG@$VERSION > /dev/null 2>&1; then
+            echo "Version $VERSION already exists. Skipping publish."
+            exit 0
+          fi
+
           npm publish --provenance --access public
         env:
           NPM_CONFIG_PROVENANCE: true
@@ -40,6 +47,15 @@ jobs:
       - name: Publish mobile to npm
         run: |
           cd packages/mobile
+
+          VERSION=$(node -p "require('./package.json').version")
+          PKG=$(node -p "require('./package.json').name")
+      
+          if npm view $PKG@$VERSION > /dev/null 2>&1; then
+            echo "Version $VERSION already exists. Skipping publish."
+            exit 0
+          fi
+
           npm publish --provenance --access public
         env:
           NPM_CONFIG_PROVENANCE: true
@@ -47,6 +63,15 @@ jobs:
       - name: Publish extension to npm
         run: |
           cd packages/extension
+
+          VERSION=$(node -p "require('./package.json').version")
+          PKG=$(node -p "require('./package.json').name")
+      
+          if npm view $PKG@$VERSION > /dev/null 2>&1; then
+            echo "Version $VERSION already exists. Skipping publish."
+            exit 0
+          fi
+
           npm publish --provenance --access public
         env:
           NPM_CONFIG_PROVENANCE: true
