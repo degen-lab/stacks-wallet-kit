@@ -5,10 +5,10 @@
     "access": "public",
     "provenance": true
   },
-  "type": "module",
-  "main": "index.js",
   "author": "DegenLab",
   "license": "ISC",
+  "type": "module",
+  "main": "index.js",
   "scripts": {
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
