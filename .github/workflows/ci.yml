@@ -30,12 +30,28 @@ jobs:
       - name: Update npm
         run: npm install -g npm@latest
 
+      - name: Install core dependencies
+        run: |
+          cd packages/core
+          pnpm install
+
+      - name: Build core
+        run: |
+          cd packages/core
+          pnpm build
+
       - name: Publish core to npm
         run: |
           cd packages/core
           npm publish --provenance --access public
         env:
           NPM_CONFIG_PROVENANCE: true
+
+      - name: Install mobile and extension dependencies
+        run: pnpm i --frozen-lockfile
+
+      - name: Build mobile and extension
+        run: pnpm build
 
       - name: Publish mobile to npm
         run: |
