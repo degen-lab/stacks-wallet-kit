@@ -1,7 +1,7 @@
 import {
   AuthError,
   IStorageManager,
-} from '@degenlab/stacks-wallet-kit/core'
+} from '@degenlab/stacks-wallet-kit-core'
 import { AuthenticationManager } from '../../../src/authentication/authenticationManager'
 import { IGoogleSignInClient } from '../../../src/interfaces/IGoogleSignInClient'
 

@@ -2,7 +2,7 @@ import {
   AuthError,
   IAuthentication,
   IStorageManager,
-} from '@degenlab/stacks-wallet-kit/core'
+} from '@degenlab/stacks-wallet-kit-core'
 import { IGoogleSignInClient } from '../interfaces/IGoogleSignInClient'
 
 export class AuthenticationManager implements IAuthentication {

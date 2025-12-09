@@ -6,7 +6,7 @@ import {
   PlayServicesNotAvailableError,
   SignOutError,
   TokenRefreshError,
-} from '@degenlab/stacks-wallet-kit/core'
+} from '@degenlab/stacks-wallet-kit-core'
 import {  
   GoogleSignin,
   isErrorWithCode,

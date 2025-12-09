@@ -42,16 +42,16 @@ export default defineConfig([
           patterns: [
             {
               group: [
-                '@stacks-wallet-kit/core/*',
-                '@stacks-wallet-kit/core/src/**',
+                '@degenlab/stacks-wallet-kit-core/*',
+                '@degenlab/stacks-wallet-kit-core/src/**',
               ],
               message:
-                'Import only from "@stacks-wallet-kit/core", not from internal paths. Use only what is exported from the core package index.',
+                'Import only from "@degenlab/stacks-wallet-kit-core", not from internal paths. Use only what is exported from the core package index.',
             },
             {
               group: ['../../core/src/**', '../../../core/src/**'],
               message:
-                'Do not use relative imports to core internal paths. Import from "@stacks-wallet-kit/core" instead.',
+                'Do not use relative imports to core internal paths. Import from "@degenlab/stacks-wallet-kit-core" instead.',
             },
           ],
         },

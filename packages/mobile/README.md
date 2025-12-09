@@ -1,4 +1,4 @@
-# stacks-wallet-kit/mobile [![npm](https://img.shields.io/npm/v/@degenlab/stacks-wallet-kit/mobile?color=red)](https://www.npmjs.com/package/@degenlab/stacks-wallet-kit/mobile)
+# stacks-wallet-kit/mobile [![npm](https://img.shields.io/npm/v/@degenlab/stacks-wallet-kit-mobile?color=red)](https://www.npmjs.com/package/@degenlab/stacks-wallet-kit-mobile)
 
 A React Native/Expo SDK for building Stacks blockchain applications with Google authentication and wallet management.
 
@@ -6,16 +6,16 @@ A React Native/Expo SDK for building Stacks blockchain applications with Google 
 
 This SDK enables seamless Web2 authentication for mobile apps and provides easy wallet backup to a safe place without requiring users to store or remember their mnemonic phrase. It simplifies blockchain operations by handling the complexity of parsing arguments and data, allowing developers to focus on building their applications rather than managing low-level blockchain interactions.
 
-The mobile SDK imports functionality from the `@stacks-wallet-kit/core` package, which is platform-agnostic and shared between this mobile SDK and the web extension SDK, ensuring consistency across platforms.
+The mobile SDK imports functionality from the `@degenlab/stacks-wallet-kit-core` package, which is platform-agnostic and shared between this mobile SDK and the web extension SDK, ensuring consistency across platforms.
 
 ## Installation
 
 ```bash
-npm install @stacks-wallet-kit/mobile
+npm install @degenlab/stacks-wallet-kit-mobile
 # or
-yarn add @stacks-wallet-kit/mobile
+yarn add @degenlab/stacks-wallet-kit-mobile
 # or
-pnpm add @stacks-wallet-kit/mobile
+pnpm add @degenlab/stacks-wallet-kit-mobile
 ```
 
 **Note:** This package works with npm, yarn, and pnpm. Choose the package manager that fits your project.
@@ -175,7 +175,7 @@ When running on web (Expo web), the polyfills work the same way, but make sure t
 ## Quick Start
 
 ```typescript
-import { MobileClient, NetworkType } from '@stacks-wallet-kit/mobile'
+import { MobileClient, NetworkType } from '@degenlab/stacks-wallet-kit-mobile'
 
 const client = new MobileClient(
   'your-web-client-id',
@@ -521,7 +521,7 @@ const txid2: string = await client.stackIncrease(account, 500, 1500, 1, {
 Delegate STX to a stacking pool.
 
 ```typescript
-import { StackingPool } from '@stacks-wallet-kit/core'
+import { StackingPool } from '@degenlab/stacks-wallet-kit-core'
 
 const pool: StackingPool = {
   name: 'Pool Name',
@@ -557,7 +557,7 @@ const txid: string = await client.revokeDelegation(account) // Returns: string
 Set the network for all operations.
 
 ```typescript
-import { NetworkType } from '@stacks-wallet-kit/mobile'
+import { NetworkType } from '@degenlab/stacks-wallet-kit-mobile'
 
 client.setNetwork(NetworkType.Mainnet)
 client.setNetwork(NetworkType.Testnet)
@@ -572,18 +572,18 @@ See the [Platform-Specific Configuration](#platform-specific-configuration) sect
 
 ### Custom Storage Manager
 
-You can provide a custom storage manager by implementing the `IStorageManager` interface from the `@stacks-wallet-kit/core` package. Make sure to install the core package:
+You can provide a custom storage manager by implementing the `IStorageManager` interface from the `@degenlab/stacks-wallet-kit-core` package. Make sure to install the core package:
 
 ```bash
-npm install @stacks-wallet-kit/core
+npm install @degenlab/stacks-wallet-kit-core
 # or
-yarn add @stacks-wallet-kit/core
+yarn add @degenlab/stacks-wallet-kit-core
 # or
-pnpm add @stacks-wallet-kit/core
+pnpm add @degenlab/stacks-wallet-kit-core
 ```
 
 ```typescript
-import { IStorageManager } from '@stacks-wallet-kit/core'
+import { IStorageManager } from '@degenlab/stacks-wallet-kit-core'
 
 class CustomStorage implements IStorageManager {
   async setItem<T>(key: string, value: T): Promise<void> {
@@ -652,8 +652,8 @@ interface StackingPool {
 ### Complete Wallet Flow
 
 ```typescript
-import { MobileClient, NetworkType } from '@stacks-wallet-kit/mobile'
-import { Wallet, WalletAccount } from '@stacks-wallet-kit/core'
+import { MobileClient, NetworkType } from '@degenlab/stacks-wallet-kit-mobile'
+import { Wallet, WalletAccount } from '@degenlab/stacks-wallet-kit-core'
 
 async function walletFlow(): Promise<void> {
   const client: MobileClient = new MobileClient(
@@ -695,8 +695,8 @@ async function walletFlow(): Promise<void> {
 ### NFT Transfer Example
 
 ```typescript
-import { MobileClient, NetworkType } from '@stacks-wallet-kit/mobile'
-import { WalletAccount } from '@stacks-wallet-kit/core'
+import { MobileClient, NetworkType } from '@degenlab/stacks-wallet-kit-mobile'
+import { WalletAccount } from '@degenlab/stacks-wallet-kit-core'
 
 async function transferNFT(): Promise<void> {
   const client: MobileClient = new MobileClient(
@@ -721,7 +721,7 @@ async function transferNFT(): Promise<void> {
 ### Custom Contract Call Example
 
 ```typescript
-import { MobileClient, NetworkType } from '@stacks-wallet-kit/mobile'
+import { MobileClient, NetworkType } from '@degenlab/stacks-wallet-kit-mobile'
 import {
   uintCV,
   standardPrincipalCV,

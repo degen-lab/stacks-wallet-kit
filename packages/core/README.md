@@ -1,6 +1,6 @@
-# stacks-wallet-kit/core [![npm](https://img.shields.io/npm/v/@degenlab/stacks-wallet-kit/core?color=red)](https://www.npmjs.com/package/@degenlab/stacks-wallet-kit/core)
+# stacks-wallet-kit-core [![npm](https://img.shields.io/npm/v/@degenlab/stacks-wallet-kit-core?color=red)](https://www.npmjs.com/package/@degenlab/stacks-wallet-kit-core)
 
-A platform-agnostic core package providing shared functionality, types, and interfaces for the Google Wallet Kit ecosystem. This package is used by both the mobile SDK (`@stacks-wallet-kit/mobile`) and the browser extension SDK (`@stacks-wallet-kit/extension`).
+A platform-agnostic core package providing shared functionality, types, and interfaces for the Google Wallet Kit ecosystem. This package is used by both the mobile SDK (`@degenlab/stacks-wallet-kit-mobile`) and the browser extension SDK (`@degenlab/stacks-wallet-kit-extension`).
 
 ## Purpose
 
@@ -15,11 +15,11 @@ The core package provides the foundational building blocks for building Stacks b
 ## Installation
 
 ```bash
-npm install @stacks-wallet-kit/core
+npm install @degenlab/stacks-wallet-kit-core
 # or
-yarn add @stacks-wallet-kit/core
+yarn add @degenlab/stacks-wallet-kit-core
 # or
-pnpm add @stacks-wallet-kit/core
+pnpm add @degenlab/stacks-wallet-kit-core
 ```
 
 **Note:** This package works with npm, yarn, and pnpm. Choose the package manager that fits your project.
@@ -33,7 +33,7 @@ pnpm add @stacks-wallet-kit/core
 Represents a wallet with its private key and accounts.
 
 ```typescript
-import { Wallet } from '@stacks-wallet-kit/core'
+import { Wallet } from '@degenlab/stacks-wallet-kit-core'
 
 const wallet: Wallet = {
   privateKey: 'xprv...',
@@ -56,7 +56,7 @@ const wallet: Wallet = {
 Represents a single account within a wallet.
 
 ```typescript
-import { WalletAccount } from '@stacks-wallet-kit/core'
+import { WalletAccount } from '@degenlab/stacks-wallet-kit-core'
 
 const account: WalletAccount = {
   index: 0,
@@ -73,7 +73,7 @@ const account: WalletAccount = {
 Encrypted wallet backup format for Google Drive.
 
 ```typescript
-import { WalletEnvelope } from '@stacks-wallet-kit/core'
+import { WalletEnvelope } from '@degenlab/stacks-wallet-kit-core'
 
 const envelope: WalletEnvelope = {
   version: 1,
@@ -102,7 +102,7 @@ const envelope: WalletEnvelope = {
 Network type enumeration.
 
 ```typescript
-import { NetworkType } from '@stacks-wallet-kit/core'
+import { NetworkType } from '@degenlab/stacks-wallet-kit-core'
 
 const network: NetworkType = NetworkType.Mainnet
 const testnet: NetworkType = NetworkType.Testnet
@@ -114,7 +114,7 @@ const devnet: NetworkType = NetworkType.Devnet
 Stacking pool configuration.
 
 ```typescript
-import { StackingPool } from '@stacks-wallet-kit/core'
+import { StackingPool } from '@degenlab/stacks-wallet-kit-core'
 
 const pool: StackingPool = {
   name: 'Pool Name',
@@ -129,7 +129,7 @@ const pool: StackingPool = {
 Interface for implementing custom storage managers.
 
 ```typescript
-import { IStorageManager } from '@stacks-wallet-kit/core'
+import { IStorageManager } from '@degenlab/stacks-wallet-kit-core'
 
 class CustomStorage implements IStorageManager {
   async setItem<T>(key: string, value: T): Promise<void> {
@@ -155,7 +155,7 @@ class CustomStorage implements IStorageManager {
 Interface for implementing custom authentication.
 
 ```typescript
-import { IAuthentication } from '@stacks-wallet-kit/core'
+import { IAuthentication } from '@degenlab/stacks-wallet-kit-core'
 
 class CustomAuth implements IAuthentication {
   async signIn(): Promise<void> {
@@ -185,7 +185,7 @@ import {
   IStacksClient,
   WalletAccount,
   NetworkType,
-} from '@stacks-wallet-kit/core'
+} from '@degenlab/stacks-wallet-kit-core'
 
 class CustomStacksClient implements IStacksClient {
   async getBalance(account: WalletAccount): Promise<number> {
@@ -211,7 +211,7 @@ class CustomStacksClient implements IStacksClient {
 Interface defining the complete SDK API surface.
 
 ```typescript
-import { ISDKFacade } from '@stacks-wallet-kit/core'
+import { ISDKFacade } from '@degenlab/stacks-wallet-kit-core'
 
 class CustomSDK implements ISDKFacade {
   async loginWithGoogle(): Promise<{
@@ -242,7 +242,7 @@ import {
   STACKS_API_BASE_URL,
   STACKS_TESTNET_API_BASE_URL,
   STACKS_DEVNET_API_BASE_URL,
-} from '@stacks-wallet-kit/core'
+} from '@degenlab/stacks-wallet-kit-core'
 
 const client = new StacksClient(
   NetworkType.Testnet,
@@ -259,7 +259,7 @@ client.setNetwork(NetworkType.Devnet)
 Client for Stacks stacking operations.
 
 ```typescript
-import { StackingClient, NetworkType } from '@stacks-wallet-kit/core'
+import { StackingClient, NetworkType } from '@degenlab/stacks-wallet-kit-core'
 
 const client = new StackingClient(NetworkType.Mainnet)
 ```
@@ -271,7 +271,7 @@ const client = new StackingClient(NetworkType.Mainnet)
 Manager for wallet operations.
 
 ```typescript
-import { WalletManager, Wallet } from '@stacks-wallet-kit/core'
+import { WalletManager, Wallet } from '@degenlab/stacks-wallet-kit-core'
 
 const manager = new WalletManager()
 const wallet: Wallet = manager.createWallet()
@@ -283,7 +283,7 @@ const updatedWallet = manager.createAccount(wallet)
 Manager for encryption operations.
 
 ```typescript
-import { EncryptionManager } from '@stacks-wallet-kit/core'
+import { EncryptionManager } from '@degenlab/stacks-wallet-kit-core'
 
 const manager = new EncryptionManager()
 const encrypted = await manager.encrypt('data', 'password')
@@ -295,7 +295,7 @@ const decrypted = await manager.decrypt(encrypted, 'password')
 Manager for backup operations.
 
 ```typescript
-import { BackupManager, GoogleBackupClient } from '@stacks-wallet-kit/core'
+import { BackupManager, GoogleBackupClient } from '@degenlab/stacks-wallet-kit-core'
 
 const backupClient = new GoogleBackupClient()
 const manager = new BackupManager(backupClient)
@@ -310,7 +310,7 @@ import {
   STACKS_API_BASE_URL,
   STACKS_TESTNET_API_BASE_URL,
   STACKS_DEVNET_API_BASE_URL,
-} from '@stacks-wallet-kit/core'
+} from '@degenlab/stacks-wallet-kit-core'
 
 const mainnetUrl = STACKS_API_BASE_URL
 const testnetUrl = STACKS_TESTNET_API_BASE_URL
@@ -320,7 +320,7 @@ const devnetUrl = STACKS_DEVNET_API_BASE_URL
 #### Stacking Pools
 
 ```typescript
-import { stackingPools } from '@stacks-wallet-kit/core'
+import { stackingPools } from '@degenlab/stacks-wallet-kit-core'
 
 const pools = stackingPools
 ```
@@ -335,7 +335,7 @@ import {
   AuthError,
   BackupError,
   StackingError,
-} from '@stacks-wallet-kit/core'
+} from '@degenlab/stacks-wallet-kit-core'
 
 try {
   // Your code
@@ -353,7 +353,7 @@ try {
 ### Custom Storage Implementation
 
 ```typescript
-import { IStorageManager } from '@stacks-wallet-kit/core'
+import { IStorageManager } from '@degenlab/stacks-wallet-kit-core'
 
 class LocalStorageManager implements IStorageManager {
   async setItem<T>(key: string, value: T): Promise<void> {
@@ -378,7 +378,7 @@ class LocalStorageManager implements IStorageManager {
 ### Using Types
 
 ```typescript
-import { Wallet, WalletAccount, NetworkType } from '@stacks-wallet-kit/core'
+import { Wallet, WalletAccount, NetworkType } from '@degenlab/stacks-wallet-kit-core'
 
 function processWallet(wallet: Wallet): void {
   wallet.accounts.forEach((account: WalletAccount) => {

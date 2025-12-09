@@ -4,7 +4,7 @@ import {
   NetworkType,
   type Wallet,
   type WalletAccount,
-} from '@degenlab/stacks-wallet-kit/core'
+} from '@degenlab/stacks-wallet-kit-core'
 import {
   type PropsWithChildren,
   useCallback,
@@ -777,7 +777,7 @@ export default function SdkPlayground() {
         SDK Playground
       </Text>
       <Text className="mb-4 text-sm text-slate-600">
-        Test all @stacks-wallet-kit/mobile functionalities with buttons and
+        Test all @degenlab/stacks-wallet-kit-mobile functionalities with buttons and
         logs.
       </Text>
       <View className="mb-4 rounded-xl bg-blue-50 border border-blue-200 p-3">

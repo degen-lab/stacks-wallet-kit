@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client'
 import {
   NetworkType,
   type WalletAccount,
-} from '@degenlab/stacks-wallet-kit/core'
+} from '@degenlab/stacks-wallet-kit-core'
 import { PostConditionMode, ClarityValue } from '@stacks/transactions'
 import { initializeSDK, getSDK, resetSDK } from './lib/sdk'
 

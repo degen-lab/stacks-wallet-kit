@@ -6,7 +6,7 @@
     "types": ["react", "jest", "node"],
     "moduleResolution": "node",
     "paths": {
-      "@degenlab/stacks-wallet-kit/core": [
+      "@degenlab/stacks-wallet-kit-core": [
         "../core/src/index.ts",
         "../core/dist/src/index.ts"
       ]

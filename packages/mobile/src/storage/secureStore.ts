@@ -1,4 +1,4 @@
-import { IStorageManager } from '@degenlab/stacks-wallet-kit/core'
+import { IStorageManager } from '@degenlab/stacks-wallet-kit-core'
 import * as Store from 'expo-secure-store'
 
 function getSecureStoreConfig(): Store.SecureStoreOptions {

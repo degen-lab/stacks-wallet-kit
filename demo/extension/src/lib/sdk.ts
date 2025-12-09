@@ -1,5 +1,5 @@
-import { NetworkType } from '@degenlab/stacks-wallet-kit/core'
-import { WebClient } from '@degenlab/stacks-wallet-kit/extension'
+import { NetworkType } from '@degenlab/stacks-wallet-kit-core'
+import { WebClient } from '@degenlab/stacks-wallet-kit-extension'
 
 const GOOGLE_SCOPES: string[] = [
   'openid',

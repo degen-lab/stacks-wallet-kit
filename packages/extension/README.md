@@ -1,4 +1,4 @@
-# stacks-wallet-kit/extension [![npm](https://img.shields.io/npm/v/@degenlab/stacks-wallet-kit/extension?color=red)](https://www.npmjs.com/package/@degenlab/stacks-wallet-kit/extension)
+# stacks-wallet-kit/extension [![npm](https://img.shields.io/npm/v/@degenlab/stacks-wallet-kit-extension?color=red)](https://www.npmjs.com/package/@degenlab/stacks-wallet-kit-extension)
 
 A Chrome extension SDK for building Stacks blockchain applications with Google authentication and wallet management.
 
@@ -6,16 +6,16 @@ A Chrome extension SDK for building Stacks blockchain applications with Google a
 
 This SDK enables seamless Web2 authentication for Chrome extensions and provides easy wallet backup to a safe place without requiring users to store or remember their mnemonic phrase. It simplifies blockchain operations by handling the complexity of parsing arguments and data, allowing developers to focus on building their applications rather than managing low-level blockchain interactions.
 
-The extension SDK imports functionality from the `@stacks-wallet-kit/core` package, which is platform-agnostic and shared between this extension SDK and the mobile SDK, ensuring consistency across platforms.
+The extension SDK imports functionality from the `@degenlab/stacks-wallet-kit-core` package, which is platform-agnostic and shared between this extension SDK and the mobile SDK, ensuring consistency across platforms.
 
 ## Installation
 
 ```bash
-npm install @stacks-wallet-kit/extension
+npm install @degenlab/stacks-wallet-kit-extension
 # or
-yarn add @stacks-wallet-kit/extension
+yarn add @degenlab/stacks-wallet-kit-extension
 # or
-pnpm add @stacks-wallet-kit/extension
+pnpm add @degenlab/stacks-wallet-kit-extension
 ```
 
 **Note:** This package works with npm, yarn, and pnpm. Choose the package manager that fits your project.
@@ -73,7 +73,7 @@ if (typeof window !== 'undefined') {
 }
 
 // Now import your SDK and other dependencies
-import { WebClient, NetworkType } from '@stacks-wallet-kit/extension'
+import { WebClient, NetworkType } from '@degenlab/stacks-wallet-kit-extension'
 // ... rest of your imports
 ```
 
@@ -173,7 +173,7 @@ Your `manifest.json` needs the following permissions and configuration:
 ## Quick Start
 
 ```typescript
-import { WebClient, NetworkType } from '@stacks-wallet-kit/extension'
+import { WebClient, NetworkType } from '@degenlab/stacks-wallet-kit-extension'
 
 const client = new WebClient(
   'your-google-client-id',
@@ -606,10 +606,10 @@ client.setNetwork(NetworkType.Devnet)
 
 ## Custom Storage Manager
 
-You can provide a custom storage manager that implements `IWebStorageManager` from `@stacks-wallet-kit/core`:
+You can provide a custom storage manager that implements `IWebStorageManager` from `@degenlab/stacks-wallet-kit-core`:
 
 ```typescript
-import { IWebStorageManager } from '@stacks-wallet-kit/core'
+import { IWebStorageManager } from '@degenlab/stacks-wallet-kit-core'
 
 class CustomStorageManager implements IWebStorageManager {
   async setPassword(password: string): Promise<void> {
@@ -651,7 +651,7 @@ const client = new WebClient(
 
 ## Types
 
-All types are exported from `@stacks-wallet-kit/core`. Common types include:
+All types are exported from `@degenlab/stacks-wallet-kit-core`. Common types include:
 
 - `Wallet` - Wallet object containing mnemonic and accounts
 - `WalletAccount` - Individual account in a wallet
