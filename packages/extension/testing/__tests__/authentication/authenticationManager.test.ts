@@ -1,4 +1,7 @@
-import { AuthError, IStorageManager } from '@stacks-wallet-kit/core'
+import {
+  AuthError,
+  IStorageManager,
+} from '@degenlab/stacks-wallet-kit/core'
 import { AuthenticationManager } from '../../../src/authentication/authenticationManager'
 import { IGoogleSignInClient } from '../../../src/interfaces/IGoogleSignInClient'
 
@@ -137,31 +140,17 @@ describe('Authentication manager unit tests', () => {
   })
 
   describe('signOut', () => {
-    it('should successfully sign out', async () => {
-      mockGoogleSignInClient.logOut.mockResolvedValueOnce(undefined)
-
+    it('should successfully sign out (no-op for now)', async () => {
+      // signOut is currently a no-op - logout is handled elsewhere
       await authenticationManager.signOut()
 
-      expect(mockGoogleSignInClient.logOut).toHaveBeenCalledTimes(1)
-      expect(mockGoogleSignInClient.logOut).toHaveBeenCalledWith()
+      // Verify it completes without calling logOut
+      expect(mockGoogleSignInClient.logOut).not.toHaveBeenCalled()
     })
 
-    it('should propagate errors from logOut', async () => {
-      const error = new Error('Logout failed')
-      mockGoogleSignInClient.logOut.mockRejectedValueOnce(error)
-
-      await expect(authenticationManager.signOut()).rejects.toThrow(
-        'Logout failed'
-      )
-    })
-
-    it('should handle chrome.identity errors during logout', async () => {
-      const chromeError = new Error('Chrome identity error')
-      mockGoogleSignInClient.logOut.mockRejectedValueOnce(chromeError)
-
-      await expect(authenticationManager.signOut()).rejects.toThrow(
-        'Chrome identity error'
-      )
+    it('should complete successfully without errors', async () => {
+      // signOut is currently a no-op, so it should always succeed
+      await expect(authenticationManager.signOut()).resolves.toBeUndefined()
     })
   })
 
@@ -347,13 +336,13 @@ describe('Authentication manager unit tests', () => {
         await authenticationManager.getAccessToken(refreshToken)
       expect(tokenResult).toBe(newAccessToken)
 
-      // Sign out
-      mockGoogleSignInClient.logOut.mockResolvedValueOnce(undefined)
+      // Sign out (currently a no-op)
       await authenticationManager.signOut()
 
       expect(mockGoogleSignInClient.loginWithGoogle).toHaveBeenCalledTimes(1)
       expect(mockGoogleSignInClient.getAccessToken).toHaveBeenCalledTimes(1)
-      expect(mockGoogleSignInClient.logOut).toHaveBeenCalledTimes(1)
+      // signOut is currently a no-op, so logOut is not called
+      expect(mockGoogleSignInClient.logOut).not.toHaveBeenCalled()
     })
 
     it('should handle silent sign in after initial sign in', async () => {

@@ -1,7 +1,7 @@
-import { AuthError } from '@stacks-wallet-kit/core'
+import { AuthError } from '@degenlab/stacks-wallet-kit/core'
 import { GoogleSigninClient } from '../../../src/authentication/googleSignInClient'
 
-const mockLaunchWebAuthFlow = jest.fn()
+const mockLaunchWebAuthFlow =  jest.fn()
 const mockGetAuthToken = jest.fn()
 const mockRemoveCachedAuthToken = jest.fn()
 const mockChromeIdentity = {

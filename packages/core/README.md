@@ -1,6 +1,6 @@
-# @stacks-wallet-kit/core
+# stacks-wallet-kit/core [![npm](https://img.shields.io/npm/v/@degenlab/stacks-wallet-kit/core?color=red)](https://www.npmjs.com/package/@degenlab/stacks-wallet-kit/core)
 
-A platform-agnostic core package providing shared functionality, types, and interfaces for the Google Wallet SDK ecosystem. This package is used by both the mobile SDK (`@stacks-wallet-kit/mobile`) and the browser extension SDK (`@stacks-wallet-kit/extension`).
+A platform-agnostic core package providing shared functionality, types, and interfaces for the Google Wallet Kit ecosystem. This package is used by both the mobile SDK (`@stacks-wallet-kit/mobile`) and the browser extension SDK (`@stacks-wallet-kit/extension`).
 
 ## Purpose
 
@@ -17,8 +17,12 @@ The core package provides the foundational building blocks for building Stacks b
 ```bash
 npm install @stacks-wallet-kit/core
 # or
+yarn add @stacks-wallet-kit/core
+# or
 pnpm add @stacks-wallet-kit/core
 ```
+
+**Note:** This package works with npm, yarn, and pnpm. Choose the package manager that fits your project.
 
 ## Usage
 

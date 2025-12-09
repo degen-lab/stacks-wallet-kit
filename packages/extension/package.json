@@ -1,5 +1,5 @@
 {
-  "name": "@stacks-wallet-kit/extension",
+  "name": "@degenlab/stacks-wallet-kit/extension",
   "version": "1.0.0",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
@@ -12,8 +12,9 @@
     },
     "./package.json": "./package.json"
   },
+  "author": "DegenLab",
   "dependencies": {
-    "@stacks-wallet-kit/core": "file:../core",
+    "@degenlab/stacks-wallet-kit/core": "1.0.0",
     "local-storage": "^2.0.0"
   },
   "devDependencies": {
@@ -34,7 +35,13 @@
     "test": "jest"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   },
-  "license": "ISC"
+  "license": "ISC",
+  "files": [
+    "dist/src",
+    "README.md",
+    "package.json"
+  ]
 }

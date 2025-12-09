@@ -1,9 +1,14 @@
 {
-  "name": "stacks-wallet-kit",
-  "private": true,
+  "name": "@degenlab/stacks-wallet-kit",
   "version": "1.0.0",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "type": "module",
   "main": "index.js",
+  "author": "DegenLab",
+  "license": "ISC",
   "scripts": {
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",

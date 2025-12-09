@@ -4,7 +4,7 @@ import {
   IWebStorageManager,
   PasswordNotSetError,
   InvalidPasswordError,
-} from '@stacks-wallet-kit/core'
+} from '@degenlab/stacks-wallet-kit/core'
 
 export class StorageManager implements IWebStorageManager {
   private password?: string

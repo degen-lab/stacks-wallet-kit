@@ -1,9 +1,5 @@
 import { StorageManager } from '../../../src/storage/storageManager'
 import { mockEncrypt, mockDecrypt } from '../../__mocks__/encryption'
-import {
-  PasswordNotSetError,
-  InvalidPasswordError,
-} from '@stacks-wallet-kit/core'
 
 interface ChromeMock {
   storage: {

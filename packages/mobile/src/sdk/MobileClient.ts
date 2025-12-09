@@ -11,7 +11,7 @@ import {
   NetworkType,
   WalletManager,
   STACKS_MOBILE_DEVNET_API_BASE_URL,
-} from '@stacks-wallet-kit/core'
+} from '@degenlab/stacks-wallet-kit/core'
 import { GoogleAuth } from '../auth/googleAuth'
 import { StorageFactory } from '../storage/storageFactory'
 

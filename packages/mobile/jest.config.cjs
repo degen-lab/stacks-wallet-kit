@@ -22,8 +22,8 @@ module.exports = {
   extensionsToTreatAsEsm: ['.ts'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   moduleNameMapper: {
-    '^@stacks-wallet-kit/core$': '<rootDir>/../core/src/index.ts',
-    '^@stacks-wallet-kit/core/(.*)$': '<rootDir>/../core/src/$1',
+    '^@degenlab/stacks-wallet-kit/core$': '<rootDir>/../core/src/index.ts',
+    '^@degenlab/stacks-wallet-kit/core/(.*)$': '<rootDir>/../core/src/$1',
     '^@react-native-google-signin/google-signin$':
       '<rootDir>/testing/__mocks__/google-signin.ts',
     '^expo-secure-store$': '<rootDir>/testing/__mocks__/expo-secure-store.ts',

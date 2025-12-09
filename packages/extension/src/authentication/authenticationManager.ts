@@ -2,7 +2,7 @@ import {
   AuthError,
   IAuthentication,
   IStorageManager,
-} from '@stacks-wallet-kit/core'
+} from '@degenlab/stacks-wallet-kit/core'
 import { IGoogleSignInClient } from '../interfaces/IGoogleSignInClient'
 
 export class AuthenticationManager implements IAuthentication {
@@ -27,11 +27,15 @@ export class AuthenticationManager implements IAuthentication {
     return accessToken
   }
 
+  /**
+   * Sign out from the wallet
+   * Note: Not needed for the moment - logout is handled by the storage manager and the high level client module
+   */
   async signOut(): Promise<void> {
     // Call the Google sign-in client's logout to revoke tokens
-    await this.googleSignInClient.logOut()
+    // await this.googleSignInClient.logOut()
     // Clear the stored refresh token from storage
-    await this.storageManager.removeItem('refreshToken')
+    // await this.storageManager.removeItem('refreshToken')
   }
 
   async getAccessToken(refreshToken: string): Promise<string> {

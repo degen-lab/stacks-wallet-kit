@@ -1,5 +1,6 @@
-import { IStorageManager } from '@stacks-wallet-kit/core'
+import { IStorageManager } from '@degenlab/stacks-wallet-kit/core'
 import * as KeyChain from 'react-native-keychain'
+
 export class KeyChainStorage implements IStorageManager {
   private keys: Set<string> = new Set()
 

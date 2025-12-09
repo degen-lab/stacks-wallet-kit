@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "Stacks Wallet Kit Demo",
+  "version": "1.0.0",
+  "description": "Demo extension playground for Stacks Wallet Kit SDK",
+  "permissions": ["storage", "identity", "activeTab", "tabs", "windows"],
+  "host_permissions": ["*://*/*"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "src/popup.html",
+    "default_title": "Stacks Wallet Kit Demo"
+  },
+  "options_page": "src/playground.html",
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; frame-src https://accounts.google.com https://*.chromiumapp.org;"
+  }
+}

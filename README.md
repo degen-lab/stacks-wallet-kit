@@ -1,4 +1,4 @@
-# Stacks Wallet Kit
+# stacks-wallet-kit
 
 A monorepo containing platform-agnostic and platform-specific SDKs for building Stacks blockchain applications with Google authentication and wallet management.
 

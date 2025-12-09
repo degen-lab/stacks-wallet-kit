@@ -1,4 +1,4 @@
-# @stacks-wallet-kit/extension
+# stacks-wallet-kit/extension [![npm](https://img.shields.io/npm/v/@degenlab/stacks-wallet-kit/extension?color=red)](https://www.npmjs.com/package/@degenlab/stacks-wallet-kit/extension)
 
 A Chrome extension SDK for building Stacks blockchain applications with Google authentication and wallet management.
 
@@ -13,8 +13,162 @@ The extension SDK imports functionality from the `@stacks-wallet-kit/core` packa
 ```bash
 npm install @stacks-wallet-kit/extension
 # or
+yarn add @stacks-wallet-kit/extension
+# or
 pnpm add @stacks-wallet-kit/extension
 ```
+
+**Note:** This package works with npm, yarn, and pnpm. Choose the package manager that fits your project.
+
+## Required Polyfills and Setup
+
+The SDK requires Node.js polyfills to work in the browser environment. The core SDK uses `Buffer` which is not available in browsers by default.
+
+### Required Polyfill Package
+
+Install the `buffer` package:
+
+```bash
+npm install buffer
+# or
+yarn add buffer
+# or
+pnpm add buffer
+```
+
+### Polyfill Setup
+
+#### For Vite Projects
+
+If you're using **Vite** (recommended for Chrome extensions), you need to:
+
+1. **Configure Vite to resolve the buffer package** in your `vite.config.ts`:
+
+```typescript
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  resolve: {
+    alias: {
+      buffer: 'buffer',
+    },
+  },
+  define: {
+    global: 'globalThis',
+  },
+  // ... rest of your config
+})
+```
+
+2. **Import and set Buffer globally** in your entry point file (e.g., `src/playground.tsx`, `src/popup.ts`, or `src/background.ts`):
+
+```typescript
+// ⚠️ IMPORTANT: Buffer polyfill MUST be imported FIRST, before any SDK imports
+import { Buffer } from 'buffer'
+
+// Make Buffer available globally
+if (typeof window !== 'undefined') {
+  ;(window as any).Buffer = Buffer
+  ;(globalThis as any).Buffer = Buffer
+}
+
+// Now import your SDK and other dependencies
+import { WebClient, NetworkType } from '@stacks-wallet-kit/extension'
+// ... rest of your imports
+```
+
+**Important:** The Buffer polyfill must be imported and set globally **before** any SDK code runs. This is critical for the SDK to work correctly.
+
+#### For Webpack Projects
+
+If you're using **Webpack**, you need to:
+
+1. **Install the buffer polyfill** (already covered above)
+
+2. **Configure Webpack** in your `webpack.config.js`:
+
+```javascript
+const webpack = require('webpack')
+
+module.exports = {
+  resolve: {
+    fallback: {
+      buffer: require.resolve('buffer'),
+    },
+  },
+  plugins: [
+    new webpack.ProvidePlugin({
+      Buffer: ['buffer', 'Buffer'],
+    }),
+  ],
+  // ... rest of your config
+}
+```
+
+3. **Set Buffer globally** in your entry point (same as Vite setup above)
+
+#### For Other Build Tools
+
+For other build tools (Rollup, esbuild, etc.), ensure:
+
+- The `buffer` package is installed
+- Buffer is available globally before any SDK imports
+- Your build tool can resolve the `buffer` module
+
+### Chrome Extension Manifest Configuration
+
+Your `manifest.json` needs the following permissions and configuration:
+
+```json
+{
+  "manifest_version": 3,
+  "permissions": ["storage", "identity", "activeTab", "tabs", "windows"],
+  "host_permissions": ["*://*/*"],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; frame-src https://accounts.google.com https://*.chromiumapp.org;"
+  }
+}
+```
+
+**Required permissions:**
+
+- `storage` - Required for storing encrypted wallet data
+- `identity` - Required for Google OAuth authentication
+- `activeTab`, `tabs`, `windows` - Required for OAuth flow
+- `host_permissions` - Required for API calls to Stacks networks
+
+**Content Security Policy:**
+
+- `'wasm-unsafe-eval'` - Required for cryptographic operations
+- `frame-src` - Required for Google OAuth redirects
+
+### Common Errors and Solutions
+
+**Error: `ReferenceError: Buffer is not defined`**
+
+- **Solution:** Ensure `buffer` package is installed and Buffer is imported and set globally **before** any SDK imports.
+
+**Error: `Cannot find module 'buffer'`**
+
+- **Solution:** Install the buffer package: `npm install buffer`
+- For Vite: Ensure the buffer alias is configured in `vite.config.ts`
+- For Webpack: Ensure the buffer fallback is configured in `webpack.config.js`
+
+**Error: `Buffer is not a constructor`**
+
+- **Solution:** Make sure Buffer is set on both `window` and `globalThis`:
+  ```typescript
+  ;(window as any).Buffer = Buffer
+  ;(globalThis as any).Buffer = Buffer
+  ```
+
+**Troubleshooting Steps:**
+
+1. Verify `buffer` package is installed: `npm list buffer`
+2. Check that Buffer is imported **first** in your entry point
+3. Verify Buffer is set globally before SDK imports
+4. Clear your build cache and rebuild
+5. Check browser console for specific error messages
 
 ## Quick Start
 
@@ -25,7 +179,17 @@ const client = new WebClient(
   'your-google-client-id',
   'your-google-client-secret',
   'https://your-extension-id.chromiumapp.org/',
-  NetworkType.Testnet
+  NetworkType.Testnet,
+  {
+    // Optional: Additional OAuth scopes
+    // scopes: ['email', 'profile'],
+    // Optional: Custom storage manager
+    // storageManager: customStorageManager,
+    // Optional: Custom API URLs
+    // mainnetUrl: 'https://api.hiro.so/',
+    // testnetUrl: 'https://api.testnet.hiro.so/',
+    // devnetUrl: 'http://localhost:3999/',
+  }
 )
 
 // IMPORTANT: Set encryption password FIRST before any operations
@@ -68,16 +232,16 @@ await client.backupWallet('my-secure-password') // Must match encryption passwor
 
 ```typescript
 new WebClient(
-  googleClientId: string,                 // Required: Google OAuth client ID
-  googleClientSecret: string,             // Required: Google OAuth client secret
-  redirectUri: string,                    // Required: OAuth redirect URI (e.g., 'https://your-extension-id.chromiumapp.org/')
-  network: NetworkType,                   // Required: Initial network (Mainnet, Testnet, or Devnet)
-  configOptions?: {                       // Optional: Configuration options
-    scopes?: string[]                     // Optional: Additional OAuth scopes
-    storageManager?: IWebStorageManager   // Optional: Custom storage manager
-    mainnetUrl?: string                   // Optional: Custom mainnet API URL
-    testnetUrl?: string                   // Optional: Custom testnet API URL
-    devnetUrl?: string                    // Optional: Custom devnet API URL
+  googleClientId: string,        // Required: Google OAuth client ID
+  googleClientSecret: string,    // Required: Google OAuth client secret
+  redirectUri: string,           // Required: OAuth redirect URI (e.g., 'https://your-extension-id.chromiumapp.org/')
+  network: NetworkType,          // Required: Initial network (Mainnet, Testnet, or Devnet)
+  configOptions?: {              // Optional: Configuration options
+    scopes?: string[]            // Optional: Additional OAuth scopes
+    storageManager?: IWebStorageManager  // Optional: Custom storage manager
+    mainnetUrl?: string          // Optional: Custom mainnet API URL
+    testnetUrl?: string          // Optional: Custom testnet API URL
+    devnetUrl?: string           // Optional: Custom devnet API URL
   }
 )
 ```
@@ -467,6 +631,11 @@ const client = new WebClient(
   NetworkType.Testnet,
   {
     storageManager: customStorage,
+    // Optional: Additional configuration
+    // scopes: ['email', 'profile'],
+    // mainnetUrl: 'https://api.hiro.so/',
+    // testnetUrl: 'https://api.testnet.hiro.so/',
+    // devnetUrl: 'http://localhost:3999/',
   }
 )
 ```

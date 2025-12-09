@@ -1,4 +1,4 @@
-import { IStorageManager } from '@stacks-wallet-kit/core'
+import { IStorageManager } from '@degenlab/stacks-wallet-kit/core'
 import { KeyChainStorage } from './keyChainStorage'
 import { SecureStore } from './secureStore'
 

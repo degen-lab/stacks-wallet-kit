@@ -498,9 +498,14 @@ export class StackingClient implements IStackingClient {
         (key) => SignatureTopic[key as keyof typeof SignatureTopic] === topic
       ) || topic.toString()
 
+    // For devnet, determine signature endpoint based on devnetBaseUrl:
+    // - Mobile emulator uses 10.0.2.2 (Android emulator host mapping to localhost)
+    // - Extension/web uses localhost
     const endpoint =
       network === NetworkType.Devnet
-        ? 'http://localhost:7070/'
+        ? this.devnetBaseUrl.includes('10.0.2.2')
+          ? 'http://10.0.2.2:7070/'
+          : 'http://localhost:7070/'
         : SIGNATURE_ENDPOINT
 
     const requestBody = {

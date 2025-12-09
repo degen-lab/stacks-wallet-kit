@@ -5,7 +5,7 @@
     "skipLibCheck": true,
     "moduleResolution": "bundler",
     "paths": {
-      "@stacks-wallet-kit/core": ["../core/src/index.ts"]
+      "@degenlab/stacks-wallet-kit/core": ["../core/src/index.ts"]
     }
   },
   "include": ["src", "testing"],

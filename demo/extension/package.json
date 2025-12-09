@@ -1,0 +1,33 @@
+{
+  "name": "@degenlab/stacks-wallet-kit/demo-extension",
+  "version": "1.0.0",
+  "type": "module",
+  "author": "DegenLab",
+  "license": "ISC",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "dev": "vite build --watch --mode development",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@degenlab/stacks-wallet-kit/core": "^1.0.0",
+    "@degenlab/stacks-wallet-kit/extension": "^1.0.0",
+    "@stacks/transactions": "^7.3.0",
+    "buffer": "^6.0.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.268",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.1",
+    "typescript": "^5.9.3",
+    "vite": "^5.4.11",
+    "vite-plugin-static-copy": "^1.0.5"
+  }
+}

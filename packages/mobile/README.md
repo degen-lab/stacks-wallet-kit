@@ -1,4 +1,4 @@
-# @stacks-wallet-kit/mobile
+# stacks-wallet-kit/mobile [![npm](https://img.shields.io/npm/v/@degenlab/stacks-wallet-kit/mobile?color=red)](https://www.npmjs.com/package/@degenlab/stacks-wallet-kit/mobile)
 
 A React Native/Expo SDK for building Stacks blockchain applications with Google authentication and wallet management.
 
@@ -13,8 +13,164 @@ The mobile SDK imports functionality from the `@stacks-wallet-kit/core` package,
 ```bash
 npm install @stacks-wallet-kit/mobile
 # or
+yarn add @stacks-wallet-kit/mobile
+# or
 pnpm add @stacks-wallet-kit/mobile
 ```
+
+**Note:** This package works with npm, yarn, and pnpm. Choose the package manager that fits your project.
+
+## Required Polyfills and Setup
+
+The SDK requires Node.js polyfills to work in React Native/Expo environments. These polyfills must be imported **before** any SDK code runs.
+
+### Required Polyfill Packages
+
+Install the following packages:
+
+```bash
+npm install react-native-get-random-values buffer
+# For Expo projects:
+npm install expo-standard-web-crypto
+```
+
+**Required packages:**
+
+1. **`react-native-get-random-values`** - Provides `crypto.getRandomValues()` for cryptographic operations
+2. **`buffer`** - Provides Node.js `Buffer` API
+3. **`expo-standard-web-crypto`** (Expo only) - Provides Web Crypto API polyfill
+
+### Polyfill Setup
+
+#### For Expo Router Projects
+
+If you're using **Expo Router**, add the polyfills at the very top of your root layout file (`app/_layout.tsx` or `app/_layout.js`):
+
+```typescript
+// app/_layout.tsx
+// ⚠️ IMPORTANT: Polyfills MUST be imported FIRST, before any other imports
+import 'react-native-get-random-values'
+import 'expo-standard-web-crypto'
+import { Buffer } from 'buffer'
+
+// Make Buffer available globally for React Native
+if (typeof global.Buffer === 'undefined') {
+  global.Buffer = Buffer
+}
+
+// Now import your other dependencies
+import { Stack } from 'expo-router'
+// ... rest of your imports
+```
+
+#### For React Native (Non-Expo) Projects
+
+If you're using **React Native without Expo**, create an `index.js` file in your project root:
+
+```javascript
+// index.js
+// ⚠️ IMPORTANT: Polyfills MUST be imported FIRST
+import 'react-native-get-random-values'
+import { Buffer } from 'buffer'
+
+// Make Buffer available globally
+if (typeof global.Buffer === 'undefined') {
+  global.Buffer = Buffer
+}
+
+// Now import your app entry point
+import { AppRegistry } from 'react-native'
+import App from './App'
+import { name as appName } from './app.json'
+
+AppRegistry.registerComponent(appName, () => App)
+```
+
+Then update your `package.json`:
+
+```json
+{
+  "main": "index.js"
+}
+```
+
+#### For Expo (Non-Router) Projects
+
+If you're using **Expo without Router**, add polyfills to your `App.js` or `App.tsx`:
+
+```typescript
+// App.tsx
+// ⚠️ IMPORTANT: Polyfills MUST be imported FIRST
+import 'react-native-get-random-values'
+import 'expo-standard-web-crypto'
+import { Buffer } from 'buffer'
+
+// Make Buffer available globally
+if (typeof global.Buffer === 'undefined') {
+  global.Buffer = Buffer
+}
+
+// Now import your app components
+import { View, Text } from 'react-native'
+// ... rest of your app
+```
+
+### Platform-Specific Configuration
+
+#### Android Emulator
+
+When testing on Android emulator, use `10.0.2.2` instead of `localhost` for devnet URLs:
+
+```typescript
+import { Platform } from 'react-native'
+
+const getDevnetUrl = (): string => {
+  if (Platform.OS === 'android') {
+    // Android emulator - use 10.0.2.2 (maps to host's localhost)
+    return 'http://10.0.2.2:3999/'
+  } else if (Platform.OS === 'web') {
+    // Web platform - use localhost
+    return 'http://localhost:3999/'
+  } else {
+    // iOS - use localhost (iOS simulator maps localhost correctly)
+    return 'http://localhost:3999/'
+  }
+}
+
+const client = new MobileClient(
+  'web-client-id',
+  'ios-client-id',
+  NetworkType.Devnet,
+  {
+    devnetUrl: getDevnetUrl(),
+  }
+)
+```
+
+#### Web Platform
+
+When running on web (Expo web), the polyfills work the same way, but make sure to use `localhost` for devnet URLs instead of `10.0.2.2`.
+
+### Common Errors and Solutions
+
+**Error: `crypto.getRandomValues must be defined`**
+
+- **Solution:** Make sure `react-native-get-random-values` is imported at the very top of your entry file, before any other imports.
+
+**Error: `Property 'Buffer' doesn't exist`**
+
+- **Solution:** Import `buffer` and set `global.Buffer = Buffer` before any SDK code runs.
+
+**Error: `ReferenceError: Buffer is not defined`**
+
+- **Solution:** Ensure the Buffer polyfill is set up correctly (see setup instructions above).
+
+**Troubleshooting Steps:**
+
+1. Verify polyfills are imported **first** in your entry file
+2. Clear Metro bundler cache: `npx expo start --clear` or `npx react-native start --reset-cache`
+3. Delete `node_modules` and reinstall: `rm -rf node_modules && npm install`
+4. Restart your development server completely
 
 ## Quick Start
 
@@ -410,20 +566,9 @@ client.setNetwork(NetworkType.Devnet)
 
 ## Configuration
 
-### Android Emulator Setup
+### Platform-Specific Devnet URLs
 
-When testing on Android emulator, use `10.0.2.2` instead of `localhost` for devnet URLs:
-
-```typescript
-const client: MobileClient = new MobileClient(
-  'web-client-id',
-  'ios-client-id',
-  NetworkType.Devnet,
-  {
-    devnetUrl: 'http://10.0.2.2:3999', // Android emulator host
-  }
-)
-```
+See the [Platform-Specific Configuration](#platform-specific-configuration) section above for details on setting up devnet URLs for different platforms (Android emulator, iOS simulator, Web).
 
 ### Custom Storage Manager
 
@@ -431,6 +576,10 @@ You can provide a custom storage manager by implementing the `IStorageManager` i
 
 ```bash
 npm install @stacks-wallet-kit/core
+# or
+yarn add @stacks-wallet-kit/core
+# or
+pnpm add @stacks-wallet-kit/core
 ```
 
 ```typescript

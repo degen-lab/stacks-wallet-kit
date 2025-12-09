@@ -1,4 +1,4 @@
-import { AuthError } from '@stacks-wallet-kit/core'
+import { AuthError } from '@degenlab/stacks-wallet-kit/core'
 import { IGoogleSignInClient } from '../interfaces/IGoogleSignInClient'
 import {
   AUTHENTICATION_URL,
