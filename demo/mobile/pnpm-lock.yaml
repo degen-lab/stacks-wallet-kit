@@ -29,10 +29,10 @@ importers:
       '@stacks/transactions':
         specifier: ^7.3.0
         version: 7.3.0
-      '@degenlab/stacks-wallet-kit/core':
+      '@degenlab/stacks-wallet-kit-core':
         specifier: ^1.0.0
         version: 1.0.0(@stacks/transactions@7.3.0)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))
-      '@degenlab/stacks-wallet-kit/mobile':
+      '@degenlab/stacks-wallet-kit-mobile':
         specifier: ^1.0.0
         version: 1.0.0(@stacks/transactions@7.3.0)(expo@54.0.26)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
       buffer:
@@ -1604,12 +1604,12 @@ packages:
     peerDependencies:
       '@urql/core': ^5.0.0
 
-  '@degenlab/stacks-wallet-kit/core@1.0.0':
+  '@degenlab/stacks-wallet-kit-core@1.0.0':
     resolution: {integrity: sha512-ys3pYgC4biYSw3FHEsbb9NfwbZrrMrrPuTws6j3jYV6wjEUBOa2t4ITOUHpJT7MoQgKILuT0iQSS3OPN2Sw0wA==}
     peerDependencies:
       '@stacks/transactions': ^7.3.0
 
-  '@degenlab/stacks-wallet-kit/mobile@1.0.0':
+  '@degenlab/stacks-wallet-kit-mobile@1.0.0':
     resolution: {integrity: sha512-TnHd35YlTwkYgSTxnJka1HxeLPn9JeMpWkArpgteZ1DpNQ16HTuHcdtV9MHt+5uQkletNS6xe6kcJmXMJfbIvQ==}
 
   '@xmldom/xmldom@0.8.11':
@@ -6768,7 +6768,7 @@ snapshots:
       '@urql/core': 5.2.0
       wonka: 6.3.5
 
-  '@degenlab/stacks-wallet-kit/core@1.0.0(@stacks/transactions@7.3.0)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))':
+  '@degenlab/stacks-wallet-kit-core@1.0.0(@stacks/transactions@7.3.0)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))':
     dependencies:
       '@noble/ciphers': 2.0.1
       '@noble/hashes': 2.0.1
@@ -6788,12 +6788,12 @@ snapshots:
       - encoding
       - react-native
 
-  '@degenlab/stacks-wallet-kit/mobile@1.0.0(@stacks/transactions@7.3.0)(expo@54.0.26)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)':
+  '@degenlab/stacks-wallet-kit-mobile@1.0.0(@stacks/transactions@7.3.0)(expo@54.0.26)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)':
     dependencies:
       '@noble/ciphers': 2.0.1
       '@react-native-async-storage/async-storage': 2.2.0(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))
       '@react-native-google-signin/google-signin': 16.0.0(expo@54.0.26)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
-      '@degenlab/stacks-wallet-kit/core': 1.0.0(@stacks/transactions@7.3.0)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))
+      '@degenlab/stacks-wallet-kit-core': 1.0.0(@stacks/transactions@7.3.0)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))
       expo-secure-store: 15.0.7(expo@54.0.26)
       react-native-keychain: 10.0.0
     transitivePeerDependencies:

@@ -13,12 +13,12 @@ import {
   STACKS_WEB_DEVNET_API_BASE_URL,
   StacksClient,
   WalletManager,
-} from '@degenlab/stacks-wallet-kit/core'
+} from '@degenlab/stacks-wallet-kit-core'
 import { GoogleSigninClient } from '../authentication/googleSignInClient'
 import { AuthenticationManager } from '../authentication/authenticationManager'
 import { SCOPES } from '../utils/constants'
 import { StorageManager } from '../storage/storageManager'
-import { IWebStorageManager } from '@degenlab/stacks-wallet-kit/core'
+import { IWebStorageManager } from '@degenlab/stacks-wallet-kit-core'
 
 /**
  *

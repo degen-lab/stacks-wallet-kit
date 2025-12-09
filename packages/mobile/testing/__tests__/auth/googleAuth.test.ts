@@ -1,4 +1,4 @@
-import { AuthError } from '@degenlab/stacks-wallet-kit/core'
+import { AuthError } from '@degenlab/stacks-wallet-kit-core'
 import { GoogleAuth } from '../../../src/auth/googleAuth'
 import {
   GoogleSignin,

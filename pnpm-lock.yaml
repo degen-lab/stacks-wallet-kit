@@ -124,9 +124,9 @@ importers:
 
   packages/extension:
     dependencies:
-      '@stacks-wallet-kit/core':
-        specifier: file:../core
-        version: file:packages/core(@stacks/transactions@7.3.0)(react-native@0.82.1(@babel/core@7.28.5)(@types/react@19.2.2)(react@19.2.0))
+      '@degenlab/stacks-wallet-kit-core':
+        specifier: 1.0.0
+        version: 1.0.0(@stacks/transactions@7.3.0)(react-native@0.82.1(@babel/core@7.28.5)(@types/react@19.2.2)(react@19.2.0))
       local-storage:
         specifier: ^2.0.0
         version: 2.0.0
@@ -161,6 +161,9 @@ importers:
 
   packages/mobile:
     dependencies:
+      '@degenlab/stacks-wallet-kit-core':
+        specifier: 1.0.0
+        version: 1.0.0(@stacks/transactions@7.3.0)(react-native@0.82.1(@babel/core@7.28.5)(@types/react@19.2.2)(react@19.2.0))
       '@noble/ciphers':
         specifier: ^2.0.1
         version: 2.0.1
@@ -170,9 +173,6 @@ importers:
       '@react-native-google-signin/google-signin':
         specifier: ^16.0.0
         version: 16.0.0(expo@54.0.25(@babel/core@7.28.5)(react-native@0.82.1(@babel/core@7.28.5)(@types/react@19.2.2)(react@19.2.0))(react@19.2.0))(react-native@0.82.1(@babel/core@7.28.5)(@types/react@19.2.2)(react@19.2.0))(react@19.2.0)
-      '@stacks-wallet-kit/core':
-        specifier: file:../core
-        version: file:packages/core(@stacks/transactions@7.3.0)(react-native@0.82.1(@babel/core@7.28.5)(@types/react@19.2.2)(react@19.2.0))
       expo-secure-store:
         specifier: ^15.0.7
         version: 15.0.7(expo@54.0.25(@babel/core@7.28.5)(react-native@0.82.1(@babel/core@7.28.5)(@types/react@19.2.2)(react@19.2.0))(react@19.2.0))
@@ -940,6 +940,11 @@ packages:
     resolution: {integrity: sha512-Vd/9EVDiu6PPJt9yAh6roZP6El1xHrdvIVGjyBsHR0RYwNHgL7FJPyIIW4fANJNG6FtyZfvlRPpFI4ZM/lubvw==}
     engines: {node: '>=18'}
 
+  '@degenlab/stacks-wallet-kit-core@1.0.0':
+    resolution: {integrity: sha512-0L759XKEbZNOopUF4Kvy+1i2MBMysatIdkxWHbtP+LOcxYosxkisLzneXYd+jLGyNanKjzgSt9zdVPlaozItNg==}
+    peerDependencies:
+      '@stacks/transactions': ^7.3.0
+
   '@emnapi/core@1.7.0':
     resolution: {integrity: sha512-pJdKGq/1iquWYtv1RRSljZklxHCOCAJFJrImO5ZLKPJVJlVUcs8yFwNQlqS0Lo8xT1VAXXTCZocF9n26FWEKsw==}
 
@@ -1504,11 +1509,6 @@ packages:
 
   '@sinonjs/fake-timers@13.0.5':
     resolution: {integrity: sha512-36/hTbH2uaWuGVERyC6da9YwGWnzUZXuPro/F2LfsdOsLnCojz/iSH8MxUt/FD2S5XBSVPhmArFUXcpCQ2Hkiw==}
-
-  '@stacks-wallet-kit/core@file:packages/core':
-    resolution: {directory: packages/core, type: directory}
-    peerDependencies:
-      '@stacks/transactions': ^7.3.0
 
   '@stacks/auth@7.2.0':
     resolution: {integrity: sha512-u+Ky4CMQWFTPI6Au3VFcW74nSIA4Zb8YjsbOkcv0q9E6LiALyK4gozpKTxKvfW3/z1ER3z1Ky9uH/s4zY59rvg==}
@@ -5914,6 +5914,26 @@ snapshots:
 
   '@csstools/css-tokenizer@3.0.4': {}
 
+  '@degenlab/stacks-wallet-kit-core@1.0.0(@stacks/transactions@7.3.0)(react-native@0.82.1(@babel/core@7.28.5)(@types/react@19.2.2)(react@19.2.0))':
+    dependencies:
+      '@noble/ciphers': 2.0.1
+      '@noble/hashes': 2.0.1
+      '@scure/bip32': 2.0.1
+      '@scure/bip39': 2.0.1
+      '@scure/btc-signer': 2.0.1
+      '@stacks/common': 7.0.2
+      '@stacks/encryption': 7.3.0
+      '@stacks/network': 7.2.0
+      '@stacks/stacking': 7.3.0
+      '@stacks/transactions': 7.3.0
+      '@stacks/wallet-sdk': 7.2.0
+      bech32: 2.0.0
+      bs58check: 4.0.0
+      react-native-get-random-values: 2.0.0(react-native@0.82.1(@babel/core@7.28.5)(@types/react@19.2.2)(react@19.2.0))
+    transitivePeerDependencies:
+      - encoding
+      - react-native
+
   '@emnapi/core@1.7.0':
     dependencies:
       '@emnapi/wasi-threads': 1.1.0
@@ -6951,26 +6971,6 @@ snapshots:
   '@sinonjs/fake-timers@13.0.5':
     dependencies:
       '@sinonjs/commons': 3.0.1
-
-  '@stacks-wallet-kit/core@file:packages/core(@stacks/transactions@7.3.0)(react-native@0.82.1(@babel/core@7.28.5)(@types/react@19.2.2)(react@19.2.0))':
-    dependencies:
-      '@noble/ciphers': 2.0.1
-      '@noble/hashes': 2.0.1
-      '@scure/bip32': 2.0.1
-      '@scure/bip39': 2.0.1
-      '@scure/btc-signer': 2.0.1
-      '@stacks/common': 7.0.2
-      '@stacks/encryption': 7.3.0
-      '@stacks/network': 7.2.0
-      '@stacks/stacking': 7.3.0
-      '@stacks/transactions': 7.3.0
-      '@stacks/wallet-sdk': 7.2.0
-      bech32: 2.0.0
-      bs58check: 4.0.0
-      react-native-get-random-values: 2.0.0(react-native@0.82.1(@babel/core@7.28.5)(@types/react@19.2.2)(react@19.2.0))
-    transitivePeerDependencies:
-      - encoding
-      - react-native
 
   '@stacks/auth@7.2.0':
     dependencies:

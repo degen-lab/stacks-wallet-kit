@@ -169,7 +169,7 @@ The extension uses:
 - **Vite** for building and bundling
 - **React** for the playground UI
 - **TypeScript** for type safety
-- **@degenlab/stacks-wallet-kit/extension** and **@degenlab/stacks-wallet-kit/core** from npm
+- **@degenlab/stacks-wallet-kit-extension** and **@degenlab/stacks-wallet-kit-core** from npm
 - **buffer** polyfill for Node.js compatibility
 
 ### Build Commands

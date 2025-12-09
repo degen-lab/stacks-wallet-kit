@@ -1,6 +1,6 @@
 import { Env } from '@/lib/env'
-import { NetworkType } from '@degenlab/stacks-wallet-kit/core'
-import { MobileClient } from '@degenlab/stacks-wallet-kit/mobile'
+import { NetworkType } from '@degenlab/stacks-wallet-kit-core'
+import { MobileClient } from '@degenlab/stacks-wallet-kit-mobile'
 import { Platform } from 'react-native'
 
 const GOOGLE_SCOPES = [

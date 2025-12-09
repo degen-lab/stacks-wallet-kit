@@ -1,45 +1,54 @@
-name: CI - test, lint, format and build
+name: Publish to Node
 
 on:
   push:
-    branches: ['develop']
+    branches:
+      - develop
+    paths-ignore:
+      - '**.yml'
 
-  pull_request:
-    branches: ['develop']
+permissions:
+  contents: read
+  id-token: write
 
 jobs:
-  ci:
+  publish:
+    name: Publish Package
     runs-on: ubuntu-latest
-
+    needs:
+      - run-tests
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Checkout Code
+        id: checkout_code
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+      - name: Setup Node
+        id: setup_node
+        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
         with:
-          version: 10.18.0
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org/'
 
-      - name: Setup node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'pnpm'
+      - name: Update npm
+        run: npm install -g npm@latest
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Publish core to npm
+        run: |
+          cd packages/core
+          npm publish --provenance --access public
+        env:
+          NPM_CONFIG_PROVENANCE: true
 
-      - name: Lint
-        run: pnpm run lint
+      - name: Publish mobile to npm
+        run: |
+          cd packages/mobile
+          npm publish --provenance --access public
+        env:
+          NPM_CONFIG_PROVENANCE: true
 
-      - name: Format
-        run: pnpm run format:check
-
-      - name: Build core package
-        run: pnpm --filter @stacks-wallet-kit/core build
-
-      - name: Run Test
-        run: pnpm run test
-
-      - name: Build all packages
-        run: pnpm run build
+      - name: Publish extension to npm
+        run: |
+          cd packages/extension
+          npm publish --provenance --access public
+        env:
+          NPM_CONFIG_PROVENANCE: true

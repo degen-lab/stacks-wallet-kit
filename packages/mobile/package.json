@@ -1,10 +1,10 @@
 {
-  "name": "@degenlab/stacks-wallet-kit/mobile",
-  "version": "1.0.0",
+  "name": "@degenlab/stacks-wallet-kit-mobile",
+  "version": "1.0.1",
   "main": "dist/src/index.js",
   "type": "module",
   "dependencies": {
-    "@degenlab/stacks-wallet-kit/core": "1.0.0",
+    "@degenlab/stacks-wallet-kit-core": "1.0.1",
     "@noble/ciphers": "^2.0.1",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-google-signin/google-signin": "^16.0.0",
