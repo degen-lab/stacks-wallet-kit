@@ -34,14 +34,10 @@ jobs:
         run: npm install -g npm@latest
 
       - name: Install core dependencies
-        run: |
-          cd packages/core
-          pnpm install
+        run: pnpm install --filter @degenlab/stacks-wallet-kit-core --frozen-lockfile
 
       - name: Build core
-        run: |
-          cd packages/core
-          pnpm build
+        run: pnpm --filter @degenlab/stacks-wallet-kit-core build
 
       - name: Publish core to npm
         run: |
@@ -60,10 +56,12 @@ jobs:
           NPM_CONFIG_PROVENANCE: true
 
       - name: Install mobile and extension dependencies
-        run: pnpm i --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Build mobile and extension
-        run: pnpm build
+        run: |
+          pnpm --filter @degenlab/stacks-wallet-kit-mobile build
+          pnpm --filter @degenlab/stacks-wallet-kit-extension build
 
       - name: Publish mobile to npm
         run: |
