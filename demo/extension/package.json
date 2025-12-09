@@ -8,6 +8,10 @@
     "access": "public",
     "provenance": true
   },
+  "repository": {
+    "url": "git+https://github.com/degen-lab/stacks-wallet-kit",
+    "type": "git"
+  },
   "scripts": {
     "dev": "vite build --watch --mode development",
     "build": "vite build",

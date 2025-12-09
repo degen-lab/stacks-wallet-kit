@@ -11,9 +11,14 @@
     },
     "./package.json": "./package.json"
   },
+  "repository": {
+    "url": "git+https://github.com/degen-lab/stacks-wallet-kit",
+    "type": "git"
+  },
   "scripts": {
     "lint": "eslint '{src,testing}/**/*.{ts,tsx}' --fix",
     "format": "prettier --write '{src,testing}/**/*.{ts,tsx,js,json,md}'",
+    "format:check": "prettier --check '{src,testing}/**/*.{ts,tsx,js,json,md}'",
     "build": "tsc -b",
     "test": "jest",
     "test:sendStx": "npx tsx test-sendStx.ts"
