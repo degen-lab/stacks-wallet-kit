@@ -1,4 +1,4 @@
-import { AuthenticationCancelledError, AuthError } from '../../../src'
+import { AuthenticationCancelledError, AuthError, User } from '../../../src'
 import { WalletNotStoredError } from '../../../src/shared/errors/SDKError'
 import { NetworkType } from '../../../src/shared'
 import { BaseClient } from '../../../src/sdk/baseClient'
@@ -75,14 +75,29 @@ describe('BaseClient', () => {
 
   describe('loginWithGoogle', () => {
     it('should login with google successfully', async () => {
-      jest
-        .spyOn(authenticationManager, 'signIn')
-        .mockResolvedValueOnce('mock-access-token')
+      const mockUser: User = {
+        user: {
+          id: 'mock-user-id',
+          email: 'mock@example.com',
+          name: 'Mock User',
+          photo: null,
+          familyName: null,
+          givenName: null,
+        },
+        scopes: [],
+        idToken: null,
+        serverAuthCode: null,
+      }
+      jest.spyOn(authenticationManager, 'signIn').mockResolvedValueOnce({
+        accessToken: 'mock-access-token',
+        user: mockUser,
+      })
       jest.spyOn(backupManager, 'hasWalletBackup').mockResolvedValueOnce(true)
       const result = await baseClient.loginWithGoogle()
       expect(result).toEqual({
         accessToken: 'mock-access-token',
         hasBackup: true,
+        userData: mockUser,
       })
     })
 
@@ -98,9 +113,23 @@ describe('BaseClient', () => {
     })
 
     it('should throw an error if the backup fails', async () => {
-      jest
-        .spyOn(authenticationManager, 'signIn')
-        .mockResolvedValueOnce('mock-access-token')
+      const mockUser: User = {
+        user: {
+          id: 'mock-user-id',
+          email: 'mock@example.com',
+          name: 'Mock User',
+          photo: null,
+          familyName: null,
+          givenName: null,
+        },
+        scopes: [],
+        idToken: null,
+        serverAuthCode: null,
+      }
+      jest.spyOn(authenticationManager, 'signIn').mockResolvedValueOnce({
+        accessToken: 'mock-access-token',
+        user: mockUser,
+      })
       jest
         .spyOn(backupManager, 'hasWalletBackup')
         .mockRejectedValueOnce(new BackupError('Backup failed', 'BACKUP_ERROR'))

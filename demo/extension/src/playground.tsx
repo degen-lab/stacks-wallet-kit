@@ -283,7 +283,8 @@ function Playground() {
         const result = await sdk.loginWithGoogle()
         return result
       },
-      (result) => `Signed in successfully. Has backup: ${result.hasBackup}`
+      (result) =>
+        `Signed in successfully. Full response: ${JSON.stringify(result, null, 2)}`
     )
   }
 

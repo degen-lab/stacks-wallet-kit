@@ -158,20 +158,23 @@ Interface for implementing custom authentication.
 import { IAuthentication } from '@degenlab/stacks-wallet-kit-core'
 
 class CustomAuth implements IAuthentication {
-  async signIn(): Promise<void> {
+  async signIn(): Promise<{ accessToken: string; user: object }> {
     // Your implementation
+    // Returns the access token and user data from authentication
   }
 
   async signOut(): Promise<void> {
     // Your implementation
   }
 
-  async getAccessToken(): Promise<string> {
+  async getAccessToken(oldAccessToken: string): Promise<string> {
     // Your implementation
+    // Refreshes the access token using the old token
   }
 
-  async isSignedIn(): Promise<boolean> {
+  async signInSilently(): Promise<{ accessToken: string; user: object }> {
     // Your implementation
+    // Signs in silently using stored refresh token
   }
 }
 ```
@@ -211,14 +214,16 @@ class CustomStacksClient implements IStacksClient {
 Interface defining the complete SDK API surface.
 
 ```typescript
-import { ISDKFacade } from '@degenlab/stacks-wallet-kit-core'
+import { ISDKFacade, User } from '@degenlab/stacks-wallet-kit-core'
 
 class CustomSDK implements ISDKFacade {
   async loginWithGoogle(): Promise<{
     accessToken: string
     hasBackup: boolean
+    userData: User | undefined
   }> {
     // Your implementation
+    // Returns access token, backup status, and user data from Google authentication
   }
 
   async createWallet(passphrase?: string): Promise<Wallet> {
@@ -295,7 +300,10 @@ const decrypted = await manager.decrypt(encrypted, 'password')
 Manager for backup operations.
 
 ```typescript
-import { BackupManager, GoogleBackupClient } from '@degenlab/stacks-wallet-kit-core'
+import {
+  BackupManager,
+  GoogleBackupClient,
+} from '@degenlab/stacks-wallet-kit-core'
 
 const backupClient = new GoogleBackupClient()
 const manager = new BackupManager(backupClient)
@@ -378,7 +386,11 @@ class LocalStorageManager implements IStorageManager {
 ### Using Types
 
 ```typescript
-import { Wallet, WalletAccount, NetworkType } from '@degenlab/stacks-wallet-kit-core'
+import {
+  Wallet,
+  WalletAccount,
+  NetworkType,
+} from '@degenlab/stacks-wallet-kit-core'
 
 function processWallet(wallet: Wallet): void {
   wallet.accounts.forEach((account: WalletAccount) => {

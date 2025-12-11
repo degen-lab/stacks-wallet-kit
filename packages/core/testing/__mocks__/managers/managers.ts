@@ -3,18 +3,55 @@ import {
   IBackupManager,
   IStorageManager,
   IWalletManager,
+  User,
 } from '../../../src'
 import { IEncryptionManager } from '../../../src/shared/interfaces/IEncryption'
 
 export const authenticationManager: IAuthentication = {
-  signIn: jest.fn(async (): Promise<string> => {
-    return 'mock-access-token'
-  }),
+  signIn: jest.fn(
+    async (): Promise<{ accessToken: string; user: User | undefined }> => {
+      return {
+        accessToken: 'mock-access-token',
+        user: {
+          user: {
+            id: 'mock-user-id',
+            email: 'mock@example.com',
+            name: 'Mock User',
+            photo: null,
+            familyName: null,
+            givenName: null,
+          },
+          scopes: [],
+          idToken: null,
+          serverAuthCode: null,
+        },
+      }
+    }
+  ),
   signOut: jest.fn(async (): Promise<void> => {
     return Promise.resolve()
   }),
   getAccessToken: jest.fn(),
-  signInSilently: jest.fn(),
+  signInSilently: jest.fn(
+    async (): Promise<{ accessToken: string; user: User | undefined }> => {
+      return {
+        accessToken: 'mock-access-token',
+        user: {
+          user: {
+            id: 'mock-user-id',
+            email: 'mock@example.com',
+            name: 'Mock User',
+            photo: null,
+            familyName: null,
+            givenName: null,
+          },
+          scopes: [],
+          idToken: null,
+          serverAuthCode: null,
+        },
+      }
+    }
+  ),
 }
 
 export const backupManager: IBackupManager = {

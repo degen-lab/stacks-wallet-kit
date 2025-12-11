@@ -260,8 +260,18 @@ new MobileClient(
 Sign in with Google and check if a wallet backup exists.
 
 ```typescript
-const result: { accessToken: string; hasBackup: boolean } =
-  await client.loginWithGoogle()
+import { User } from '@degenlab/stacks-wallet-kit-core'
+
+const result: {
+  accessToken: string
+  hasBackup: boolean
+  userData: User | undefined
+} = await client.loginWithGoogle()
+
+// Access the returned values
+console.log('Access Token:', result.accessToken)
+console.log('Has Backup:', result.hasBackup)
+console.log('User Data:', result.userData) // Contains Google user information
 ```
 
 #### `signOut()`
@@ -653,7 +663,7 @@ interface StackingPool {
 
 ```typescript
 import { MobileClient, NetworkType } from '@degenlab/stacks-wallet-kit-mobile'
-import { Wallet, WalletAccount } from '@degenlab/stacks-wallet-kit-core'
+import { Wallet, WalletAccount, User } from '@degenlab/stacks-wallet-kit-core'
 
 async function walletFlow(): Promise<void> {
   const client: MobileClient = new MobileClient(
@@ -663,8 +673,14 @@ async function walletFlow(): Promise<void> {
     { devnetUrl: 'http://10.0.2.2:3999' }
   )
 
-  const { hasBackup }: { accessToken: string; hasBackup: boolean } =
-    await client.loginWithGoogle()
+  const {
+    hasBackup,
+    userData,
+  }: {
+    accessToken: string
+    hasBackup: boolean
+    userData: User | undefined
+  } = await client.loginWithGoogle()
 
   let wallet: Wallet
   if (hasBackup) {

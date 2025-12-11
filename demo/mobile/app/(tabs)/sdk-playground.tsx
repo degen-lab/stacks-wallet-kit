@@ -208,9 +208,19 @@ export default function SdkPlayground() {
 
   // Authentication methods
   const handleLoginWithGoogle = useCallback(async () => {
-    await executeWithLogging('loginWithGoogle', async () => {
-      return await walletKit.loginWithGoogle()
-    })
+    await executeWithLogging(
+      'loginWithGoogle',
+      async () => {
+        const result = await walletKit.loginWithGoogle()
+        console.log(
+          '[SDK Playground] Login response:',
+          JSON.stringify(result, null, 2)
+        )
+        return result
+      },
+      (result) =>
+        `Login successful. Full response: ${JSON.stringify(result, null, 2)}`
+    )
   }, [executeWithLogging])
 
   const handleSignOut = useCallback(async () => {
@@ -777,8 +787,8 @@ export default function SdkPlayground() {
         SDK Playground
       </Text>
       <Text className="mb-4 text-sm text-slate-600">
-        Test all @degenlab/stacks-wallet-kit-mobile functionalities with buttons and
-        logs.
+        Test all @degenlab/stacks-wallet-kit-mobile functionalities with buttons
+        and logs.
       </Text>
       <View className="mb-4 rounded-xl bg-blue-50 border border-blue-200 p-3">
         <Text className="text-xs font-semibold text-blue-900 mb-1">
@@ -1157,4 +1167,3 @@ export default function SdkPlayground() {
     </ScrollView>
   )
 }
-

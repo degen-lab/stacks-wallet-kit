@@ -35,7 +35,14 @@ describe('Google authentication unit tests', () => {
   })
   it('should sign in successfully and return mocked user info', async () => {
     const result = await googleAuth.signIn()
-    expect(result).toBe('mock-access-token')
+    expect(result).toEqual({
+      accessToken: 'mock-access-token',
+      user: {
+        email: 'mocked-email@example.com',
+        name: 'Test user',
+        id: 'mock-user-id',
+      },
+    })
   })
 
   it('should throw an error if user sign in already in progress', async () => {

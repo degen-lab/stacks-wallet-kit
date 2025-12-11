@@ -1,8 +1,18 @@
 export const GoogleSignin = {
   configure: jest.fn(),
   signIn: jest.fn(async () => ({
-    idToken: 'mock-id-tocken',
-    user: { email: 'mocked-email@example.com', name: 'Test user' },
+    data: {
+      email: 'mocked-email@example.com',
+      name: 'Test user',
+      id: 'mock-user-id',
+    },
+  })),
+  signInSilently: jest.fn(async () => ({
+    data: {
+      email: 'mocked-email@example.com',
+      name: 'Test user',
+      id: 'mock-user-id',
+    },
   })),
   hasPlayServices: jest.fn(async () => true),
   getTokens: jest.fn(async () => ({
