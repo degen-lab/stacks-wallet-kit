@@ -418,14 +418,16 @@ export class BaseClient implements ISDKFacade {
   async loginWithGoogle(): Promise<{
     accessToken: string
     hasBackup: boolean
+    userData: object
   }> {
     try {
-      const accessToken = await this.authenticationManager.signIn()
+      const { accessToken, user } = await this.authenticationManager.signIn()
       this.backupManager.updateAccessToken(accessToken)
       const hasBackup = await this.backupManager.hasWalletBackup()
       return {
         accessToken,
         hasBackup,
+        userData: user,
       }
     } catch (error) {
       if (error instanceof AccessTokenError) {
@@ -600,12 +602,12 @@ export class BaseClient implements ISDKFacade {
   }
 
   /**
-   * Get the balance of an account
-   * @param account - The account to get the balance of
-   * @returns The balance of the account
+   * Get the balance of the provided account in STX
+   * @param account - The stacks wallet account
+   * @returns The STX balance of the account
    */
-  async getBalance(Account: WalletAccount): Promise<number> {
-    return await this.stacksClient.getBalance(Account)
+  async getBalance(account: WalletAccount): Promise<number> {
+    return await this.stacksClient.getBalance(account)
   }
 
   /**
@@ -702,8 +704,8 @@ export class BaseClient implements ISDKFacade {
   ): Promise<T> {
     const oldToken = this.backupManager.getAccessTokenFromClient()
     if (!oldToken) {
-      const token = await this.authenticationManager.signInSilently()
-      this.backupManager.updateAccessToken(token)
+      const { accessToken } = await this.authenticationManager.signInSilently()
+      this.backupManager.updateAccessToken(accessToken)
     } else {
       const newToken = await this.authenticationManager.getAccessToken(oldToken)
 

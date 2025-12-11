@@ -7,14 +7,24 @@ import {
 import { IEncryptionManager } from '../../../src/shared/interfaces/IEncryption'
 
 export const authenticationManager: IAuthentication = {
-  signIn: jest.fn(async (): Promise<string> => {
-    return 'mock-access-token'
+  signIn: jest.fn(async (): Promise<{ accessToken: string; user: object }> => {
+    return {
+      accessToken: 'mock-access-token',
+      user: { id: 'mock-user-id', email: 'mock@example.com' },
+    }
   }),
   signOut: jest.fn(async (): Promise<void> => {
     return Promise.resolve()
   }),
   getAccessToken: jest.fn(),
-  signInSilently: jest.fn(),
+  signInSilently: jest.fn(
+    async (): Promise<{ accessToken: string; user: object }> => {
+      return {
+        accessToken: 'mock-access-token',
+        user: { id: 'mock-user-id', email: 'mock@example.com' },
+      }
+    }
+  ),
 }
 
 export const backupManager: IBackupManager = {

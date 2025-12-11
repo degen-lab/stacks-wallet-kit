@@ -11,6 +11,7 @@ import {
   GoogleSignin,
   isErrorWithCode,
   statusCodes,
+  User,
 } from '@react-native-google-signin/google-signin'
 import { SCOPES } from '../helper/constants'
 export class GoogleAuth implements IAuthentication {
@@ -26,18 +27,30 @@ export class GoogleAuth implements IAuthentication {
     })
   }
 
-  async signInSilently(): Promise<string> {
-    await GoogleSignin.signInSilently()
+  async signInSilently(): Promise<{ accessToken: string; user: User }> {
+    const signInResponse = await GoogleSignin.signInSilently()
+    if (!signInResponse.data) {
+      throw new AuthError('User not found', 'USER_NOT_FOUND')
+    }
     const { accessToken } = await GoogleSignin.getTokens()
-    return accessToken
+    return {
+      accessToken,
+      user: signInResponse.data,
+    }
   }
 
-  async signIn(): Promise<string> {
+  async signIn(): Promise<{ accessToken: string; user: User }> {
     try {
       await GoogleSignin.hasPlayServices()
-      await GoogleSignin.signIn()
+      const signInResponse = await GoogleSignin.signIn()
+      if (!signInResponse.data) {
+        throw new AuthError('User not found', 'USER_NOT_FOUND')
+      }
       const { accessToken } = await GoogleSignin.getTokens()
-      return accessToken
+      return {
+        accessToken,
+        user: signInResponse.data,
+      }
     } catch (error) {
       if (isErrorWithCode(error)) {
         switch (error.code) {

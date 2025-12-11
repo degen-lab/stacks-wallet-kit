@@ -15,7 +15,7 @@ export class AuthenticationManager implements IAuthentication {
     private storageManager: IStorageManager
   ) {}
 
-  async signIn(): Promise<string> {
+  async signIn(): Promise<{ accessToken: string; user: object }> {
     const { accessToken, refreshToken } =
       await this.googleSignInClient.loginWithGoogle(
         this.googleClientId,
@@ -24,7 +24,7 @@ export class AuthenticationManager implements IAuthentication {
         this.scopes
       )
     await this.storageManager.setItem('refreshToken', refreshToken)
-    return accessToken
+    return { accessToken, user: {} }
   }
 
   /**
@@ -46,17 +46,20 @@ export class AuthenticationManager implements IAuthentication {
     )
   }
 
-  async signInSilently(): Promise<string> {
+  async signInSilently(): Promise<{ accessToken: string; user: object }> {
     const storedRefreshToken =
       await this.storageManager.getItem<string>('refreshToken')
 
     if (!storedRefreshToken) {
       throw new AuthError('Refresh token is required', 'REFRESH_TOKEN_REQUIRED')
     }
-    return await this.googleSignInClient.getAccessToken(
-      this.googleClientId,
-      this.googleClientSecret,
-      storedRefreshToken
-    )
+    return {
+      accessToken: await this.googleSignInClient.getAccessToken(
+        this.googleClientId,
+        this.googleClientSecret,
+        storedRefreshToken
+      ),
+      user: {},
+    }
   }
 }

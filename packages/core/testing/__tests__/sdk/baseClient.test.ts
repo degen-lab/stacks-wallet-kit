@@ -75,14 +75,16 @@ describe('BaseClient', () => {
 
   describe('loginWithGoogle', () => {
     it('should login with google successfully', async () => {
-      jest
-        .spyOn(authenticationManager, 'signIn')
-        .mockResolvedValueOnce('mock-access-token')
+      jest.spyOn(authenticationManager, 'signIn').mockResolvedValueOnce({
+        accessToken: 'mock-access-token',
+        user: { id: 'mock-user-id', email: 'mock@example.com' },
+      })
       jest.spyOn(backupManager, 'hasWalletBackup').mockResolvedValueOnce(true)
       const result = await baseClient.loginWithGoogle()
       expect(result).toEqual({
         accessToken: 'mock-access-token',
         hasBackup: true,
+        userData: { id: 'mock-user-id', email: 'mock@example.com' },
       })
     })
 
@@ -98,9 +100,10 @@ describe('BaseClient', () => {
     })
 
     it('should throw an error if the backup fails', async () => {
-      jest
-        .spyOn(authenticationManager, 'signIn')
-        .mockResolvedValueOnce('mock-access-token')
+      jest.spyOn(authenticationManager, 'signIn').mockResolvedValueOnce({
+        accessToken: 'mock-access-token',
+        user: { id: 'mock-user-id', email: 'mock@example.com' },
+      })
       jest
         .spyOn(backupManager, 'hasWalletBackup')
         .mockRejectedValueOnce(new BackupError('Backup failed', 'BACKUP_ERROR'))

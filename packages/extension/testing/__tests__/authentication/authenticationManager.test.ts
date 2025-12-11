@@ -1,7 +1,4 @@
-import {
-  AuthError,
-  IStorageManager,
-} from '@degenlab/stacks-wallet-kit-core'
+import { AuthError, IStorageManager } from '@degenlab/stacks-wallet-kit-core'
 import { AuthenticationManager } from '../../../src/authentication/authenticationManager'
 import { IGoogleSignInClient } from '../../../src/interfaces/IGoogleSignInClient'
 
@@ -53,7 +50,10 @@ describe('Authentication manager unit tests', () => {
 
       const result = await authenticationManager.signIn()
 
-      expect(result).toBe(accessToken)
+      expect(result).toEqual({
+        accessToken,
+        user: {},
+      })
       expect(mockGoogleSignInClient.loginWithGoogle).toHaveBeenCalledWith(
         googleClientId,
         googleClientSecret,
@@ -223,7 +223,10 @@ describe('Authentication manager unit tests', () => {
 
       const result = await authenticationManager.signInSilently()
 
-      expect(result).toBe(newAccessToken)
+      expect(result).toEqual({
+        accessToken: newAccessToken,
+        user: {},
+      })
       expect(mockGoogleSignInClient.getAccessToken).toHaveBeenCalledWith(
         googleClientId,
         googleClientSecret,
@@ -325,7 +328,10 @@ describe('Authentication manager unit tests', () => {
         refreshToken,
       })
       const signInResult = await authenticationManager.signIn()
-      expect(signInResult).toBe(accessToken)
+      expect(signInResult).toEqual({
+        accessToken,
+        user: {},
+      })
 
       // Get new access token
       const newAccessToken = 'new-access-token'
@@ -360,7 +366,10 @@ describe('Authentication manager unit tests', () => {
         newAccessToken
       )
       const silentResult = await authenticationManager.signInSilently()
-      expect(silentResult).toBe(newAccessToken)
+      expect(silentResult).toEqual({
+        accessToken: newAccessToken,
+        user: {},
+      })
     })
 
     it('should handle multiple token refreshes', async () => {

@@ -1,6 +1,6 @@
 export interface IAuthentication {
-  signIn(): Promise<string>
+  signIn(): Promise<{ accessToken: string; user: object }>
   signOut(): Promise<void>
   getAccessToken(oldAccessToken: string): Promise<string>
-  signInSilently(): Promise<string>
+  signInSilently(): Promise<{ accessToken: string; user: object }>
 }
