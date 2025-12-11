@@ -214,13 +214,13 @@ class CustomStacksClient implements IStacksClient {
 Interface defining the complete SDK API surface.
 
 ```typescript
-import { ISDKFacade } from '@degenlab/stacks-wallet-kit-core'
+import { ISDKFacade, User } from '@degenlab/stacks-wallet-kit-core'
 
 class CustomSDK implements ISDKFacade {
   async loginWithGoogle(): Promise<{
     accessToken: string
     hasBackup: boolean
-    userData: object
+    userData: User | undefined
   }> {
     // Your implementation
     // Returns access token, backup status, and user data from Google authentication

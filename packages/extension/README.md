@@ -300,10 +300,12 @@ await client.setEncryptionPassword('your-encryption-password')
 Sign in with Google and check if a wallet backup exists.
 
 ```typescript
+import { User } from '@degenlab/stacks-wallet-kit-core'
+
 const result: {
   accessToken: string
   hasBackup: boolean
-  userData: object
+  userData: User | undefined
 } = await client.loginWithGoogle()
 
 // Access the returned values

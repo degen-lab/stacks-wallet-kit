@@ -2,6 +2,7 @@ import {
   AuthError,
   IAuthentication,
   IStorageManager,
+  User,
 } from '@degenlab/stacks-wallet-kit-core'
 import { IGoogleSignInClient } from '../interfaces/IGoogleSignInClient'
 
@@ -15,7 +16,7 @@ export class AuthenticationManager implements IAuthentication {
     private storageManager: IStorageManager
   ) {}
 
-  async signIn(): Promise<{ accessToken: string; user: object }> {
+  async signIn(): Promise<{ accessToken: string; user: User | undefined }> {
     const { accessToken, refreshToken } =
       await this.googleSignInClient.loginWithGoogle(
         this.googleClientId,
@@ -24,7 +25,7 @@ export class AuthenticationManager implements IAuthentication {
         this.scopes
       )
     await this.storageManager.setItem('refreshToken', refreshToken)
-    return { accessToken, user: {} }
+    return { accessToken, user: undefined }
   }
 
   /**
@@ -46,7 +47,10 @@ export class AuthenticationManager implements IAuthentication {
     )
   }
 
-  async signInSilently(): Promise<{ accessToken: string; user: object }> {
+  async signInSilently(): Promise<{
+    accessToken: string
+    user: User | undefined
+  }> {
     const storedRefreshToken =
       await this.storageManager.getItem<string>('refreshToken')
 
@@ -59,7 +63,7 @@ export class AuthenticationManager implements IAuthentication {
         this.googleClientSecret,
         storedRefreshToken
       ),
-      user: {},
+      user: undefined,
     }
   }
 }

@@ -11,6 +11,7 @@ import {
   MaxAmountSmallerThanAmountError,
   MinimumThresholdNotMetError,
   NetworkType,
+  User,
   Wallet,
   WalletAccount,
   WalletEnvelope,
@@ -418,7 +419,7 @@ export class BaseClient implements ISDKFacade {
   async loginWithGoogle(): Promise<{
     accessToken: string
     hasBackup: boolean
-    userData: object
+    userData: User | undefined
   }> {
     try {
       const { accessToken, user } = await this.authenticationManager.signIn()

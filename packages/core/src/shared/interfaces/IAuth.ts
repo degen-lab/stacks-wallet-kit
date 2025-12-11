@@ -1,6 +1,8 @@
+import { User } from '../types/backupTypes'
+
 export interface IAuthentication {
-  signIn(): Promise<{ accessToken: string; user: object }>
+  signIn(): Promise<{ accessToken: string; user: User | undefined }>
   signOut(): Promise<void>
   getAccessToken(oldAccessToken: string): Promise<string>
-  signInSilently(): Promise<{ accessToken: string; user: object }>
+  signInSilently(): Promise<{ accessToken: string; user: User | undefined }>
 }

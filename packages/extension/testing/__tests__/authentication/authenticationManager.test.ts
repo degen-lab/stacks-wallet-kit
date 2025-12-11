@@ -52,7 +52,7 @@ describe('Authentication manager unit tests', () => {
 
       expect(result).toEqual({
         accessToken,
-        user: {},
+        user: undefined,
       })
       expect(mockGoogleSignInClient.loginWithGoogle).toHaveBeenCalledWith(
         googleClientId,
@@ -225,7 +225,7 @@ describe('Authentication manager unit tests', () => {
 
       expect(result).toEqual({
         accessToken: newAccessToken,
-        user: {},
+        user: undefined,
       })
       expect(mockGoogleSignInClient.getAccessToken).toHaveBeenCalledWith(
         googleClientId,
@@ -330,7 +330,7 @@ describe('Authentication manager unit tests', () => {
       const signInResult = await authenticationManager.signIn()
       expect(signInResult).toEqual({
         accessToken,
-        user: {},
+        user: undefined,
       })
 
       // Get new access token
@@ -368,7 +368,7 @@ describe('Authentication manager unit tests', () => {
       const silentResult = await authenticationManager.signInSilently()
       expect(silentResult).toEqual({
         accessToken: newAccessToken,
-        user: {},
+        user: undefined,
       })
     })
 

@@ -1,9 +1,13 @@
 import { ClarityValue, PostConditionMode } from '@stacks/transactions'
 import { StackingPool } from '../../stacks/utils/types'
-import { NetworkType, Wallet, WalletAccount } from '../types/backupTypes'
+import { NetworkType, User, Wallet, WalletAccount } from '../types/backupTypes'
 
 export interface ISDKFacade {
-  loginWithGoogle(): Promise<{ accessToken: string; hasBackup: boolean }>
+  loginWithGoogle(): Promise<{
+    accessToken: string
+    hasBackup: boolean
+    userData: User | undefined
+  }>
   createWallet(passphrase?: string): Promise<Wallet>
   backupWallet(password: string): Promise<void>
   retrieveWallet(password: string): Promise<{

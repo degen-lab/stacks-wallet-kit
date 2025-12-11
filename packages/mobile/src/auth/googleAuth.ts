@@ -6,12 +6,12 @@ import {
   PlayServicesNotAvailableError,
   SignOutError,
   TokenRefreshError,
+  User,
 } from '@degenlab/stacks-wallet-kit-core'
 import {
   GoogleSignin,
   isErrorWithCode,
   statusCodes,
-  User,
 } from '@react-native-google-signin/google-signin'
 import { SCOPES } from '../helper/constants'
 export class GoogleAuth implements IAuthentication {
@@ -27,7 +27,10 @@ export class GoogleAuth implements IAuthentication {
     })
   }
 
-  async signInSilently(): Promise<{ accessToken: string; user: User }> {
+  async signInSilently(): Promise<{
+    accessToken: string
+    user: User | undefined
+  }> {
     const signInResponse = await GoogleSignin.signInSilently()
     if (!signInResponse.data) {
       throw new AuthError('User not found', 'USER_NOT_FOUND')
@@ -39,7 +42,7 @@ export class GoogleAuth implements IAuthentication {
     }
   }
 
-  async signIn(): Promise<{ accessToken: string; user: User }> {
+  async signIn(): Promise<{ accessToken: string; user: User | undefined }> {
     try {
       await GoogleSignin.hasPlayServices()
       const signInResponse = await GoogleSignin.signIn()
