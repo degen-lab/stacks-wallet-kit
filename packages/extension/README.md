@@ -300,8 +300,16 @@ await client.setEncryptionPassword('your-encryption-password')
 Sign in with Google and check if a wallet backup exists.
 
 ```typescript
-const result: { accessToken: string; hasBackup: boolean } =
-  await client.loginWithGoogle()
+const result: {
+  accessToken: string
+  hasBackup: boolean
+  userData: object
+} = await client.loginWithGoogle()
+
+// Access the returned values
+console.log('Access Token:', result.accessToken)
+console.log('Has Backup:', result.hasBackup)
+console.log('User Data:', result.userData) // Contains Google user information
 ```
 
 #### `signOut()`

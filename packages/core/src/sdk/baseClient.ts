@@ -413,7 +413,7 @@ export class BaseClient implements ISDKFacade {
 
   /**
    * Login with Google
-   * @returns The access token and whether the user has a backup
+   * @returns The access token, whether the user has a backup and the user data from Google
    */
   async loginWithGoogle(): Promise<{
     accessToken: string
