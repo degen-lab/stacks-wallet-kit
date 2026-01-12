@@ -1,4 +1,8 @@
-import { ClarityValue, PostConditionMode } from '@stacks/transactions'
+import {
+  ClarityValue,
+  PostConditionMode,
+  StacksTransactionWire,
+} from '@stacks/transactions'
 import { NetworkType, WalletAccount } from '../types/backupTypes'
 
 export interface IStacksClient {
@@ -44,4 +48,9 @@ export interface IStacksClient {
     senderKey: string,
     postConditionMode?: PostConditionMode
   ): Promise<string>
+
+  signTranasction(
+    transaction: StacksTransactionWire,
+    privateKey: string
+  ): StacksTransactionWire
 }

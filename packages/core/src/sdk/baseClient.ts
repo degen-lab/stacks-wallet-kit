@@ -30,7 +30,11 @@ import { StackingPool } from '../stacks/utils/types'
 import { validateMnemonic } from '@scure/bip39'
 import { wordlist } from '@scure/bip39/wordlists/english.js'
 import { HDKey } from '@scure/bip32'
-import { ClarityValue, PostConditionMode } from '@stacks/transactions'
+import {
+  ClarityValue,
+  PostConditionMode,
+  StacksTransactionWire,
+} from '@stacks/transactions'
 
 export class BaseClient implements ISDKFacade {
   constructor(
@@ -42,6 +46,32 @@ export class BaseClient implements ISDKFacade {
     protected stacksClient: IStacksClient,
     protected stackingClient: IStackingClient
   ) {}
+
+  /**
+   * Sign a prepared Stacks transaction using an account-derived private key.
+   * @param accountIndex - Index of the wallet account to use for signing
+   * @param transaction - Unsigned transaction payload to be signed
+   * @returns Signed transaction ready for broadcast
+   * @throws WalletNotStoredError if no wallet is available in storage
+   */
+  async signTransaction(
+    accountIndex: number,
+    transaction: StacksTransactionWire
+  ): Promise<StacksTransactionWire> {
+    const wallet = await this.storageManager.getItem<Wallet>('wallet')
+    if (!wallet) {
+      throw new WalletNotStoredError(
+        'Wallet not found in local storage',
+        'WALLET_NOT_FOUND'
+      )
+    }
+    const privateKey = derivePrivateKey(
+      HDKey.fromExtendedKey(wallet.privateKey),
+      accountIndex
+    )
+
+    return this.stacksClient.signTranasction(transaction, privateKey)
+  }
 
   /**
    * Make a contract call to the Stacks network

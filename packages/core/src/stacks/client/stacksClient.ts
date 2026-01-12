@@ -8,6 +8,7 @@ import {
   uintCV,
   PostConditionMode,
   ClarityValue,
+  TransactionSigner,
 } from '@stacks/transactions'
 import { createNetwork, StacksNetwork } from '@stacks/network'
 import { IStacksClient, NetworkType, WalletAccount } from '../../shared/index'
@@ -32,6 +33,15 @@ export class StacksClient implements IStacksClient {
         : network === NetworkType.Testnet
           ? this.testnetBaseUrl
           : this.devnetBaseUrl
+  }
+
+  signTranasction(
+    transaction: StacksTransactionWire,
+    privateKey: string
+  ): StacksTransactionWire {
+    const signer = new TransactionSigner(transaction)
+    signer.signOrigin(privateKey)
+    return transaction
   }
 
   async makeContractCall(

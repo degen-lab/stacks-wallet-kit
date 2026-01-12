@@ -397,4 +397,16 @@ function processWallet(wallet: Wallet): void {
     // Process account
   })
 }
+
+/**
+ * Sign a prepared Stacks transaction with a stored wallet account.
+ * `signTransaction` derives the private key for the given account index and
+ * returns the signed `StacksTransactionWire`, ready to broadcast.
+ */
+import { BaseClient } from '@degenlab/stacks-wallet-kit-core'
+
+const signedTx = await baseClient.signTransaction(
+  0, // account index
+  unsignedTransaction
+)
 ```

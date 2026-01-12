@@ -32,4 +32,3 @@ A mobile demo app for testing the Google Wallet SDK functionality.
 - **Android**: Run `pnpm android` to build and open in Android emulator
 
 This project uses [Expo Router](https://docs.expo.dev/router/introduction/) for file-based routing.
-

@@ -195,6 +195,12 @@ const accounts = await client.getWalletAccounts()
 const account = accounts[0]
 
 const balance = await client.getBalance(account)
+
+// Sign a prepared Stacks transaction with a specific account
+const signedTx = await client.signTransaction(
+  account.index,
+  unsignedTransaction // StacksTransactionWire
+)
 ```
 
 ## MobileClient Configuration
