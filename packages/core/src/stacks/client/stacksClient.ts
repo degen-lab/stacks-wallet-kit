@@ -34,12 +34,15 @@ export class StacksClient implements IStacksClient {
           ? this.testnetBaseUrl
           : this.devnetBaseUrl
   }
-    signTranasction(transaction: StacksTransactionWire, privateKey: string): StacksTransactionWire {
-      const signer = new TransactionSigner(transaction);
-      signer.signOrigin(privateKey);
-      return transaction; 
-    }
 
+  signTranasction(
+    transaction: StacksTransactionWire,
+    privateKey: string
+  ): StacksTransactionWire {
+    const signer = new TransactionSigner(transaction)
+    signer.signOrigin(privateKey)
+    return transaction
+  }
 
   async makeContractCall(
     contractAddress: string,

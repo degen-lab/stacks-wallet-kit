@@ -8,6 +8,7 @@ export const stacksClient: IStacksClient = {
   getPoxData: jest.fn(),
   setNetwork: jest.fn(),
   makeContractCall: jest.fn(),
+  signTranasction: jest.fn(),
 }
 
 export const stackingClient: IStackingClient = {

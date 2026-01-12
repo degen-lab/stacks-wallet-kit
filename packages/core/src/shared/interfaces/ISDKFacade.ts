@@ -1,4 +1,8 @@
-import { ClarityValue, PostConditionMode, StacksTransactionWire } from '@stacks/transactions'
+import {
+  ClarityValue,
+  PostConditionMode,
+  StacksTransactionWire,
+} from '@stacks/transactions'
 import { StackingPool } from '../../stacks/utils/types'
 import { NetworkType, User, Wallet, WalletAccount } from '../types/backupTypes'
 
@@ -96,7 +100,7 @@ export interface ISDKFacade {
     functionArgs: ClarityValue[],
     postConditionMode?: PostConditionMode
   ): Promise<string>
-  
+
   signTransaction(
     accountIndex: number,
     transaction: StacksTransactionWire
