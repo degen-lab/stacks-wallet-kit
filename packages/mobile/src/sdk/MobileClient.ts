@@ -79,19 +79,18 @@ export class MobileClient extends BaseClient {
   }
 
   async getMnemonic(): Promise<string | null> {
-    return this.storageManager.getItem('mnemonic');
+    return this.storageManager.getItem('mnemonic')
   }
-  
 
   async removeWalletAccount(accountIndex: number): Promise<void> {
-    const wallet = await this.storageManager.getItem<Wallet>('wallet');
+    const wallet = await this.storageManager.getItem<Wallet>('wallet')
     if (!wallet) {
-       throw new WalletNotStoredError(
-          'Wallet not found in local storage',
-          'WALLET_NOT_FOUND'
-        );
+      throw new WalletNotStoredError(
+        'Wallet not found in local storage',
+        'WALLET_NOT_FOUND'
+      )
     }
-    wallet.accounts.splice(accountIndex, 1);
-    await this.storageManager.setItem<Wallet>('wallet', wallet);
+    wallet.accounts.splice(accountIndex, 1)
+    await this.storageManager.setItem<Wallet>('wallet', wallet)
   }
 }
