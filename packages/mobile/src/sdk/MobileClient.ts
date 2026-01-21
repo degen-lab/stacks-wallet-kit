@@ -11,6 +11,8 @@ import {
   NetworkType,
   WalletManager,
   STACKS_MOBILE_DEVNET_API_BASE_URL,
+  Wallet,
+  WalletNotStoredError,
 } from '@degenlab/stacks-wallet-kit-core'
 import { GoogleAuth } from '../auth/googleAuth'
 import { StorageFactory } from '../storage/storageFactory'
@@ -74,5 +76,22 @@ export class MobileClient extends BaseClient {
       stacksClient,
       stackingClient
     )
+  }
+
+  async getMnemonic(): Promise<string | null> {
+    return this.storageManager.getItem('mnemonic');
+  }
+  
+
+  async removeWalletAccount(accountIndex: number): Promise<void> {
+    const wallet = await this.storageManager.getItem<Wallet>('wallet');
+    if (!wallet) {
+       throw new WalletNotStoredError(
+          'Wallet not found in local storage',
+          'WALLET_NOT_FOUND'
+        );
+    }
+    wallet.accounts.splice(accountIndex, 1);
+    await this.storageManager.setItem<Wallet>('wallet', wallet);
   }
 }
