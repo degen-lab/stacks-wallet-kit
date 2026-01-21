@@ -78,10 +78,20 @@ export class MobileClient extends BaseClient {
     )
   }
 
+  /**
+   * Retrieve the stored mnemonic phrase from secure storage.
+   * @returns The mnemonic phrase if found, null otherwise
+   */
   async getMnemonic(): Promise<string | null> {
     return this.storageManager.getItem('mnemonic')
   }
 
+  /**
+   * Remove an account from the wallet by its index.
+   * The wallet is automatically updated in storage after the account is removed.
+   * @param accountIndex - Index of the account to remove (can be negative to count from end)
+   * @throws WalletNotStoredError if no wallet is available in storage
+   */
   async removeWalletAccount(accountIndex: number): Promise<void> {
     const wallet = await this.storageManager.getItem<Wallet>('wallet')
     if (!wallet) {

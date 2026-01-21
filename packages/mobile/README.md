@@ -323,6 +323,36 @@ Create a new account in the wallet.
 const newAccount: WalletAccount = await client.createAccount()
 ```
 
+#### `removeWalletAccount(accountIndex: number)`
+
+Remove an account from the wallet by its index.
+
+```typescript
+// Remove account at index 1
+await client.removeWalletAccount(1)
+
+// Get updated accounts
+const accounts: WalletAccount[] = await client.getWalletAccounts()
+```
+
+**Note:** This permanently removes the account from the wallet stored in local storage. The wallet is automatically updated after removal.
+
+#### `getMnemonic()`
+
+Retrieve the stored mnemonic phrase from secure storage.
+
+```typescript
+const mnemonic: string | null = await client.getMnemonic()
+
+if (mnemonic) {
+  console.log('Mnemonic:', mnemonic)
+} else {
+  console.log('No mnemonic found')
+}
+```
+
+**Note:** Returns `null` if no mnemonic is stored. The mnemonic is securely stored when creating or storing a wallet.
+
 ### Backup
 
 #### `backupWallet(password: string)`

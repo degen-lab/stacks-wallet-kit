@@ -315,18 +315,14 @@ describe('MobileClient', () => {
       await mockStorageManager.setItem('wallet', mockWallet)
 
       const callOrder: string[] = []
-      jest
-        .spyOn(mockStorageManager, 'getItem')
-        .mockImplementation(async () => {
-          callOrder.push('getItem')
-          return mockWallet
-        })
+      jest.spyOn(mockStorageManager, 'getItem').mockImplementation(async () => {
+        callOrder.push('getItem')
+        return mockWallet
+      })
 
-      jest
-        .spyOn(mockStorageManager, 'setItem')
-        .mockImplementation(async () => {
-          callOrder.push('setItem')
-        })
+      jest.spyOn(mockStorageManager, 'setItem').mockImplementation(async () => {
+        callOrder.push('setItem')
+      })
 
       await mobileClient.removeWalletAccount(0)
 
