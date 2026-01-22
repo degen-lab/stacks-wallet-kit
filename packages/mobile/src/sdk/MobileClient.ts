@@ -109,9 +109,7 @@ export class MobileClient extends BaseClient {
     )
 
     if (accountArrayIndex === -1) {
-      throw new Error(
-        `Account with index ${accountIndex} not found in wallet`
-      )
+      throw new Error(`Account with index ${accountIndex} not found in wallet`)
     }
 
     // Add to deleted indices list

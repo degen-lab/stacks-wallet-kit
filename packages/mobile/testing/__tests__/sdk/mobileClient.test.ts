@@ -153,7 +153,7 @@ describe('MobileClient', () => {
 
     it('should remove account by its index property', async () => {
       const mockWallet = createMockWallet()
-      
+
       // Set wallet in storage
       await mockStorageManager.setItem('wallet', mockWallet)
       const setItemSpy = jest.spyOn(mockStorageManager, 'setItem')
@@ -163,10 +163,10 @@ describe('MobileClient', () => {
 
       // Verify the wallet was updated correctly
       expect(setItemSpy).toHaveBeenCalledWith('wallet', expect.any(Object))
-      
+
       // Get the updated wallet from storage
       const updatedWallet = await mockStorageManager.getItem<Wallet>('wallet')
-      
+
       expect(updatedWallet).not.toBeNull()
       expect(updatedWallet!.accounts).toHaveLength(2)
       // Remaining accounts should be index 1 and 2
@@ -182,7 +182,7 @@ describe('MobileClient', () => {
       await mobileClient.removeWalletAccount(1)
 
       const updatedWallet = await mockStorageManager.getItem<Wallet>('wallet')
-      
+
       expect(updatedWallet!.accounts).toHaveLength(2)
       // Remaining accounts should have index 0 and 2
       expect(updatedWallet!.accounts[0].index).toBe(0)
@@ -197,7 +197,7 @@ describe('MobileClient', () => {
       await mobileClient.removeWalletAccount(2)
 
       const updatedWallet = await mockStorageManager.getItem<Wallet>('wallet')
-      
+
       expect(updatedWallet!.accounts).toHaveLength(2)
       // Remaining accounts should have index 0 and 1
       expect(updatedWallet!.accounts[0].index).toBe(0)
@@ -318,13 +318,13 @@ describe('MobileClient', () => {
     it('should call storage methods in correct order', async () => {
       const mockWallet = createMockWallet()
       await mockStorageManager.setItem('wallet', mockWallet)
-      
+
       const callOrder: string[] = []
       jest.spyOn(mockStorageManager, 'getItem').mockImplementation(async () => {
         callOrder.push('getItem')
         return mockWallet
       })
-      
+
       jest.spyOn(mockStorageManager, 'setItem').mockImplementation(async () => {
         callOrder.push('setItem')
       })
@@ -392,7 +392,7 @@ describe('MobileClient', () => {
       )
 
       const updatedWallet = await mockStorageManager.getItem<Wallet>('wallet')
-      
+
       // Should still have 2 accounts (removed only once)
       expect(updatedWallet!.accounts).toHaveLength(2)
       expect(updatedWallet!.accounts[0].index).toBe(0)
