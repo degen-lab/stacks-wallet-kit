@@ -325,17 +325,24 @@ const newAccount: WalletAccount = await client.createAccount()
 
 #### `removeWalletAccount(accountIndex: number)`
 
-Remove an account from the wallet by its index.
+Remove an account from the wallet by its account index property.
 
 ```typescript
-// Remove account at index 1
+// Remove account where account.index === 1
 await client.removeWalletAccount(1)
+
+// Trying to remove the same index again will throw an error
+// await client.removeWalletAccount(1) // ❌ Error: Account with index 1 not found
 
 // Get updated accounts
 const accounts: WalletAccount[] = await client.getWalletAccounts()
 ```
 
-**Note:** This permanently removes the account from the wallet stored in local storage. The wallet is automatically updated after removal.
+**Note:** 
+- This removes the account by its `index` property, not by array position
+- The deleted index is tracked and will be reused when creating new accounts
+- Throws an error if no account with the specified index exists
+- This permanently removes the account from the wallet stored in local storage
 
 #### `getMnemonic()`
 

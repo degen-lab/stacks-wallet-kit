@@ -151,49 +151,55 @@ describe('MobileClient', () => {
       ],
     })
 
-    it('should remove account at index 0 and update storage', async () => {
+    it('should remove account by its index property', async () => {
       const mockWallet = createMockWallet()
-
+      
       // Set wallet in storage
       await mockStorageManager.setItem('wallet', mockWallet)
       const setItemSpy = jest.spyOn(mockStorageManager, 'setItem')
 
+      // Remove account with index 0
       await mobileClient.removeWalletAccount(0)
 
       // Verify the wallet was updated correctly
       expect(setItemSpy).toHaveBeenCalledWith('wallet', expect.any(Object))
-
+      
       // Get the updated wallet from storage
       const updatedWallet = await mockStorageManager.getItem<Wallet>('wallet')
-
+      
       expect(updatedWallet).not.toBeNull()
       expect(updatedWallet!.accounts).toHaveLength(2)
+      // Remaining accounts should be index 1 and 2
       expect(updatedWallet!.accounts[0].index).toBe(1)
       expect(updatedWallet!.accounts[1].index).toBe(2)
     })
 
-    it('should remove account at index 1 (middle) and update storage', async () => {
+    it('should remove account with index 1 from middle position', async () => {
       const mockWallet = createMockWallet()
       await mockStorageManager.setItem('wallet', mockWallet)
 
+      // Remove account with index 1
       await mobileClient.removeWalletAccount(1)
 
       const updatedWallet = await mockStorageManager.getItem<Wallet>('wallet')
-
+      
       expect(updatedWallet!.accounts).toHaveLength(2)
+      // Remaining accounts should have index 0 and 2
       expect(updatedWallet!.accounts[0].index).toBe(0)
       expect(updatedWallet!.accounts[1].index).toBe(2)
     })
 
-    it('should remove account at last index and update storage', async () => {
+    it('should remove account with index 2 from last position', async () => {
       const mockWallet = createMockWallet()
       await mockStorageManager.setItem('wallet', mockWallet)
 
+      // Remove account with index 2
       await mobileClient.removeWalletAccount(2)
 
       const updatedWallet = await mockStorageManager.getItem<Wallet>('wallet')
-
+      
       expect(updatedWallet!.accounts).toHaveLength(2)
+      // Remaining accounts should have index 0 and 1
       expect(updatedWallet!.accounts[0].index).toBe(0)
       expect(updatedWallet!.accounts[1].index).toBe(1)
     })
@@ -243,32 +249,31 @@ describe('MobileClient', () => {
       }
     })
 
-    it('should handle invalid account index gracefully', async () => {
+    it('should throw error when account index does not exist', async () => {
       const mockWallet = createMockWallet()
       await mockStorageManager.setItem('wallet', mockWallet)
 
-      // Try to remove account at invalid index (doesn't exist)
-      await mobileClient.removeWalletAccount(10)
+      // Try to remove account with index 10 (doesn't exist)
+      await expect(mobileClient.removeWalletAccount(10)).rejects.toThrow(
+        'Account with index 10 not found in wallet'
+      )
 
+      // Wallet should remain unchanged
       const updatedWallet = await mockStorageManager.getItem<Wallet>('wallet')
-
-      // splice handles out of bounds gracefully - no change to array
       expect(updatedWallet!.accounts).toHaveLength(3)
     })
 
-    it('should handle negative index', async () => {
+    it('should throw error for negative account index', async () => {
       const mockWallet = createMockWallet()
       await mockStorageManager.setItem('wallet', mockWallet)
 
-      // Negative index removes from end: -1 removes last account
-      await mobileClient.removeWalletAccount(-1)
+      // Negative indices are not valid account.index values
+      await expect(mobileClient.removeWalletAccount(-1)).rejects.toThrow(
+        'Account with index -1 not found in wallet'
+      )
 
       const updatedWallet = await mockStorageManager.getItem<Wallet>('wallet')
-
-      // With -1, splice removes the last element
-      expect(updatedWallet!.accounts).toHaveLength(2)
-      expect(updatedWallet!.accounts[0].index).toBe(0)
-      expect(updatedWallet!.accounts[1].index).toBe(1)
+      expect(updatedWallet!.accounts).toHaveLength(3)
     })
 
     it('should handle storage getItem errors', async () => {
@@ -313,20 +318,85 @@ describe('MobileClient', () => {
     it('should call storage methods in correct order', async () => {
       const mockWallet = createMockWallet()
       await mockStorageManager.setItem('wallet', mockWallet)
-
+      
       const callOrder: string[] = []
       jest.spyOn(mockStorageManager, 'getItem').mockImplementation(async () => {
         callOrder.push('getItem')
         return mockWallet
       })
-
+      
       jest.spyOn(mockStorageManager, 'setItem').mockImplementation(async () => {
         callOrder.push('setItem')
       })
 
-      await mobileClient.removeWalletAccount(0)
+      await mobileClient.removeWalletAccount(1)
 
       expect(callOrder).toEqual(['getItem', 'setItem'])
+    })
+
+    it('should track deleted index in deletedIndices array', async () => {
+      const mockWallet = createMockWallet()
+      await mockStorageManager.setItem('wallet', mockWallet)
+
+      await mobileClient.removeWalletAccount(1)
+
+      const updatedWallet = await mockStorageManager.getItem<Wallet>('wallet')
+
+      expect(updatedWallet!.deletedIndices).toBeDefined()
+      expect(updatedWallet!.deletedIndices).toContain(1)
+      expect(updatedWallet!.deletedIndices).toHaveLength(1)
+    })
+
+    it('should keep deletedIndices sorted', async () => {
+      const mockWallet = createMockWallet()
+      await mockStorageManager.setItem('wallet', mockWallet)
+
+      // Remove accounts in non-sequential order (by their index property)
+      await mobileClient.removeWalletAccount(2) // Remove account with index 2
+      await mobileClient.removeWalletAccount(0) // Remove account with index 0
+
+      const updatedWallet = await mockStorageManager.getItem<Wallet>('wallet')
+
+      expect(updatedWallet!.deletedIndices).toEqual([0, 2])
+      // Only account with index 1 should remain
+      expect(updatedWallet!.accounts).toHaveLength(1)
+      expect(updatedWallet!.accounts[0].index).toBe(1)
+    })
+
+    it('should handle multiple deletions and track all indices', async () => {
+      const mockWallet = createMockWallet()
+      await mockStorageManager.setItem('wallet', mockWallet)
+
+      // Remove accounts with index 0 and 1
+      await mobileClient.removeWalletAccount(0)
+      await mobileClient.removeWalletAccount(1)
+
+      const updatedWallet = await mockStorageManager.getItem<Wallet>('wallet')
+
+      expect(updatedWallet!.deletedIndices).toEqual([0, 1])
+      expect(updatedWallet!.accounts).toHaveLength(1)
+      // Only account with index 2 should remain
+      expect(updatedWallet!.accounts[0].index).toBe(2)
+    })
+
+    it('should throw error when trying to remove same index twice', async () => {
+      const mockWallet = createMockWallet()
+      await mockStorageManager.setItem('wallet', mockWallet)
+
+      // Remove account with index 2
+      await mobileClient.removeWalletAccount(2)
+
+      // Try to remove index 2 again - should throw error
+      await expect(mobileClient.removeWalletAccount(2)).rejects.toThrow(
+        'Account with index 2 not found in wallet'
+      )
+
+      const updatedWallet = await mockStorageManager.getItem<Wallet>('wallet')
+      
+      // Should still have 2 accounts (removed only once)
+      expect(updatedWallet!.accounts).toHaveLength(2)
+      expect(updatedWallet!.accounts[0].index).toBe(0)
+      expect(updatedWallet!.accounts[1].index).toBe(1)
     })
   })
 })

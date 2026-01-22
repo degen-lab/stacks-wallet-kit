@@ -87,10 +87,12 @@ export class MobileClient extends BaseClient {
   }
 
   /**
-   * Remove an account from the wallet by its index.
+   * Remove an account from the wallet by its account index property.
    * The wallet is automatically updated in storage after the account is removed.
-   * @param accountIndex - Index of the account to remove (can be negative to count from end)
+   * The deleted index is tracked and will be reused when creating new accounts.
+   * @param accountIndex - The index property of the account to remove (account.index)
    * @throws WalletNotStoredError if no wallet is available in storage
+   * @throws Error if account with the specified index is not found
    */
   async removeWalletAccount(accountIndex: number): Promise<void> {
     const wallet = await this.storageManager.getItem<Wallet>('wallet')
@@ -100,7 +102,25 @@ export class MobileClient extends BaseClient {
         'WALLET_NOT_FOUND'
       )
     }
-    wallet.accounts.splice(accountIndex, 1)
+
+    // Find the account by its index property
+    const accountArrayIndex = wallet.accounts.findIndex(
+      (acc) => acc.index === accountIndex
+    )
+
+    if (accountArrayIndex === -1) {
+      throw new Error(
+        `Account with index ${accountIndex} not found in wallet`
+      )
+    }
+
+    // Add to deleted indices list
+    const deletedIndices = wallet.deletedIndices || []
+    deletedIndices.push(accountIndex)
+    wallet.deletedIndices = deletedIndices.sort((a, b) => a - b) // Keep sorted
+
+    // Remove the account
+    wallet.accounts.splice(accountArrayIndex, 1)
     await this.storageManager.setItem<Wallet>('wallet', wallet)
   }
 }
