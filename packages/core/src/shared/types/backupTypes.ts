@@ -46,8 +46,8 @@ export type WalletAccount = {
 export type Wallet = {
   privateKey: string
   createdAt: string
-
   accounts: Array<WalletAccount>
+  deletedIndices?: number[]
 }
 
 export type User = {

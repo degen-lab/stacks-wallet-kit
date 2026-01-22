@@ -34,16 +34,32 @@ export class WalletManager implements IWalletManager {
           },
         },
       ],
+      deletedIndices: [],
     }
     return wallet
   }
 
   createAccount(wallet: Wallet): Wallet {
-    const maxIndex =
-      wallet.accounts.length > 0
-        ? Math.max(...wallet.accounts.map((acc) => acc.index))
-        : -1
-    const accountIndex = maxIndex + 1
+    // Check if there are any deleted indices to reuse
+    let accountIndex: number
+    let updatedDeletedIndices = wallet.deletedIndices || []
+
+    if (updatedDeletedIndices.length > 0) {
+      // Reuse the smallest deleted index
+      accountIndex = Math.min(...updatedDeletedIndices)
+      // Remove it from the deleted indices list
+      updatedDeletedIndices = updatedDeletedIndices.filter(
+        (idx) => idx !== accountIndex
+      )
+    } else {
+      // No deleted indices, use the next sequential index
+      const maxIndex =
+        wallet.accounts.length > 0
+          ? Math.max(...wallet.accounts.map((acc) => acc.index))
+          : -1
+      accountIndex = maxIndex + 1
+    }
+
     const accountPublicKey = derivePublicKey(
       HDKey.fromExtendedKey(wallet.privateKey),
       accountIndex
@@ -55,6 +71,7 @@ export class WalletManager implements IWalletManager {
 
     return {
       ...wallet,
+      deletedIndices: updatedDeletedIndices,
       accounts: [
         ...wallet.accounts,
         {
@@ -91,6 +108,7 @@ export class WalletManager implements IWalletManager {
           },
         },
       ],
+      deletedIndices: [],
     }
     return {
       wallet,
