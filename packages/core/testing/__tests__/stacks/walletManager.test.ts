@@ -67,6 +67,64 @@ describe('Wallet manager unit tests', () => {
     expect(walletWithThirdAccount.accounts[2].index).toBe(2)
   })
 
+  it('should reuse deleted index when creating new account', async () => {
+    const { wallet } = await walletManager.createWallet('test-password')
+    const walletWith3Accounts = walletManager.createAccount(
+      walletManager.createAccount(wallet)
+    )
+
+    // Simulate deletion by marking index 1 as deleted
+    const walletWithDeletedIndex = {
+      ...walletWith3Accounts,
+      accounts: walletWith3Accounts.accounts.filter((acc) => acc.index !== 1),
+      deletedIndices: [1],
+    }
+
+    const updatedWallet = walletManager.createAccount(walletWithDeletedIndex)
+
+    // Should reuse index 1
+    const newAccount = updatedWallet.accounts.find((acc) => acc.index === 1)
+    expect(newAccount).toBeDefined()
+    expect(updatedWallet.accounts).toHaveLength(3)
+    expect(updatedWallet.deletedIndices).toEqual([])
+  })
+
+  it('should reuse smallest deleted index when multiple are available', async () => {
+    const { wallet } = await walletManager.createWallet('test-password')
+
+    // Create wallet with accounts 0, 1, 2, 3 and mark 1 and 3 as deleted
+    const walletWith4Accounts = walletManager.createAccount(
+      walletManager.createAccount(walletManager.createAccount(wallet))
+    )
+
+    const walletWithDeletedIndices = {
+      ...walletWith4Accounts,
+      accounts: walletWith4Accounts.accounts.filter(
+        (acc) => acc.index !== 1 && acc.index !== 3
+      ),
+      deletedIndices: [3, 1], // Unsorted to test sorting
+    }
+
+    const updatedWallet = walletManager.createAccount(walletWithDeletedIndices)
+
+    // Should reuse index 1 (smallest)
+    const newAccount = updatedWallet.accounts.find((acc) => acc.index === 1)
+    expect(newAccount).toBeDefined()
+    expect(updatedWallet.deletedIndices).toEqual([3]) // 3 should still be in the list
+  })
+
+  it('should use next sequential index when no deleted indices available', async () => {
+    const { wallet } = await walletManager.createWallet('test-password')
+    const walletWith2Accounts = walletManager.createAccount(wallet)
+
+    // No deleted indices
+    const updatedWallet = walletManager.createAccount(walletWith2Accounts)
+
+    expect(updatedWallet.accounts).toHaveLength(3)
+    expect(updatedWallet.accounts[2].index).toBe(2)
+    expect(updatedWallet.deletedIndices || []).toEqual([])
+  })
+
   describe('Mnemonic validation', () => {
     it('should generate a valid BIP39 mnemonic', async () => {
       const { mnemonic } = await walletManager.createWallet('test-password')
