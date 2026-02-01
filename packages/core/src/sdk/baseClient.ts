@@ -46,6 +46,9 @@ export class BaseClient implements ISDKFacade {
     protected stacksClient: IStacksClient,
     protected stackingClient: IStackingClient
   ) {}
+    async hasBackup(): Promise<boolean> {
+      return await this.backupManager.hasWalletBackup();
+    }
 
   /**
    * Sign a prepared Stacks transaction using an account-derived private key.

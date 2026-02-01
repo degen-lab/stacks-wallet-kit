@@ -106,4 +106,6 @@ export interface ISDKFacade {
     accountIndex: number,
     transaction: StacksTransactionWire
   ): Promise<StacksTransactionWire>
+
+  hasBackup(): Promise<boolean>
 }
