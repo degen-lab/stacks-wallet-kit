@@ -98,7 +98,8 @@ export interface ISDKFacade {
     contractAddress: string,
     functionName: string,
     functionArgs: ClarityValue[],
-    postConditionMode?: PostConditionMode
+    postConditionMode?: PostConditionMode,
+    fee?: number
   ): Promise<string>
 
   signTransaction(

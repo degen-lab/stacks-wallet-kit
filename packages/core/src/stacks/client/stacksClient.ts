@@ -50,7 +50,8 @@ export class StacksClient implements IStacksClient {
     functionName: string,
     functionArgs: ClarityValue[],
     senderKey: string,
-    postConditionMode: PostConditionMode = PostConditionMode.Deny
+    postConditionMode: PostConditionMode = PostConditionMode.Deny,
+    fee?: number,
   ): Promise<string> {
     const networkObject = this.getNetworkObject(this.network)
     const transaction = await makeContractCall({
@@ -61,6 +62,7 @@ export class StacksClient implements IStacksClient {
       senderKey,
       network: networkObject,
       postConditionMode,
+      fee,
     })
     // Wrap fetch in a function to preserve context when passed to broadcastTransaction
     const fetchWrapper = (input: RequestInfo | URL, init?: RequestInit) =>

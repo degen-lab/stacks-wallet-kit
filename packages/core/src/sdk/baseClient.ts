@@ -85,7 +85,8 @@ export class BaseClient implements ISDKFacade {
     contractAddress: string,
     functionName: string,
     functionArgs: ClarityValue[],
-    postConditionMode?: PostConditionMode
+    postConditionMode?: PostConditionMode,
+    fee?: number
   ): Promise<string> {
     const wallet = await this.storageManager.getItem<Wallet>('wallet')
     if (!wallet) {
@@ -105,7 +106,8 @@ export class BaseClient implements ISDKFacade {
       functionName,
       functionArgs,
       senderKey,
-      postConditionMode
+      postConditionMode,
+      fee,
     )
   }
 
