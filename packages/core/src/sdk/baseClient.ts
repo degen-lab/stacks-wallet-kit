@@ -52,7 +52,16 @@ export class BaseClient implements ISDKFacade {
    * @returns True if a backup exists, false otherwise
    */
   async hasBackup(): Promise<boolean> {
-    return await this.backupManager.hasWalletBackup()
+    try {
+      return await this.backupManager.hasWalletBackup()
+    } catch (error) {
+      if (error instanceof AccessTokenError) {
+        return this.refreshTokenAndRetry(async () =>
+          this.backupManager.hasWalletBackup()
+        )
+      }
+      throw error
+    }
   }
 
   /**
