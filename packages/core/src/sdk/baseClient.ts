@@ -46,9 +46,14 @@ export class BaseClient implements ISDKFacade {
     protected stacksClient: IStacksClient,
     protected stackingClient: IStackingClient
   ) {}
-    async hasBackup(): Promise<boolean> {
-      return await this.backupManager.hasWalletBackup();
-    }
+
+  /**
+   * Check if a wallet backup exists in the configured backup provider.
+   * @returns True if a backup exists, false otherwise
+   */
+  async hasBackup(): Promise<boolean> {
+    return await this.backupManager.hasWalletBackup()
+  }
 
   /**
    * Sign a prepared Stacks transaction using an account-derived private key.
@@ -82,6 +87,7 @@ export class BaseClient implements ISDKFacade {
    * @param functionName - The name of the function to call
    * @param functionArgs - The arguments to pass to the function
    * @param postConditionMode - Optional post condition mode (defaults to PostConditionMode.Deny)
+   * @param fee - Optional custom transaction fee in microSTX
    * @returns The transaction ID of the contract call
    */
   async makeContractCall(
@@ -110,7 +116,7 @@ export class BaseClient implements ISDKFacade {
       functionArgs,
       senderKey,
       postConditionMode,
-      fee,
+      fee
     )
   }
 

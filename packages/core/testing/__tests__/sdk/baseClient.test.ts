@@ -2036,6 +2036,7 @@ describe('BaseClient', () => {
         functionName,
         functionArgs,
         expect.any(String),
+        undefined,
         undefined
       )
     })
@@ -2070,7 +2071,8 @@ describe('BaseClient', () => {
         functionName,
         functionArgs,
         expect.any(String),
-        PostConditionMode.Allow
+        PostConditionMode.Allow,
+        undefined
       )
     })
 
@@ -2116,7 +2118,8 @@ describe('BaseClient', () => {
         functionName,
         functionArgs,
         expect.any(String), // senderKey derived from wallet
-        undefined // postConditionMode defaults to undefined (will use default in stacksClient)
+        undefined, // postConditionMode defaults to undefined (will use default in stacksClient)
+        undefined // fee defaults to undefined (will use default fee)
       )
     })
 

@@ -409,4 +409,30 @@ const signedTx = await baseClient.signTransaction(
   0, // account index
   unsignedTransaction
 )
+
+/**
+ * Check if a wallet backup exists in the configured backup provider.
+ * Returns true if a backup is found, false otherwise.
+ */
+const hasBackup: boolean = await baseClient.hasBackup()
+
+if (hasBackup) {
+  console.log('Wallet backup exists')
+} else {
+  console.log('No wallet backup found')
+}
+
+/**
+ * Make a contract call with a custom transaction fee.
+ * The `fee` parameter is optional and specified in microSTX.
+ */
+import { PostConditionMode, ClarityValue } from '@stacks/transactions'
+
+const txId = await baseClient.makeContractCall(
+  'SP000000000000000000002Q6VF78.contract-name',
+  'function-name',
+  [/* functionArgs as ClarityValue[] */],
+  PostConditionMode.Allow,
+  5000 // custom fee in microSTX
+)
 ```

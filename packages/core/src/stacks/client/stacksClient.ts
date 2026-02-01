@@ -51,7 +51,7 @@ export class StacksClient implements IStacksClient {
     functionArgs: ClarityValue[],
     senderKey: string,
     postConditionMode: PostConditionMode = PostConditionMode.Deny,
-    fee?: number,
+    fee?: number
   ): Promise<string> {
     const networkObject = this.getNetworkObject(this.network)
     const transaction = await makeContractCall({

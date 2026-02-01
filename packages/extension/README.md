@@ -207,6 +207,23 @@ const signedTx = await client.signTransaction(
   account.index,
   unsignedTransaction // StacksTransactionWire
 )
+
+// Check if a wallet backup exists
+const hasBackup = await client.hasBackup()
+if (hasBackup) {
+  console.log('Wallet backup exists')
+}
+
+// Make a contract call with custom fee
+import { PostConditionMode, ClarityValue } from '@stacks/transactions'
+
+const txId = await client.makeContractCall(
+  'SP000000000000000000002Q6VF78.contract-name',
+  'function-name',
+  [/* functionArgs as ClarityValue[] */],
+  PostConditionMode.Allow,
+  5000 // optional custom fee in microSTX
+)
 ```
 
 ## ⚠️ Important: Password Setup
