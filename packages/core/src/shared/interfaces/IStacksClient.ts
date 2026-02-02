@@ -46,7 +46,8 @@ export interface IStacksClient {
     functionName: string,
     functionArgs: ClarityValue[],
     senderKey: string,
-    postConditionMode?: PostConditionMode
+    postConditionMode?: PostConditionMode,
+    fee?: number
   ): Promise<string>
 
   signTranasction(

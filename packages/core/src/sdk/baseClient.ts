@@ -48,6 +48,23 @@ export class BaseClient implements ISDKFacade {
   ) {}
 
   /**
+   * Check if a wallet backup exists in the configured backup provider.
+   * @returns True if a backup exists, false otherwise
+   */
+  async hasBackup(): Promise<boolean> {
+    try {
+      return await this.backupManager.hasWalletBackup()
+    } catch (error) {
+      if (error instanceof AccessTokenError) {
+        return this.refreshTokenAndRetry(async () =>
+          this.backupManager.hasWalletBackup()
+        )
+      }
+      throw error
+    }
+  }
+
+  /**
    * Sign a prepared Stacks transaction using an account-derived private key.
    * @param accountIndex - Index of the wallet account to use for signing
    * @param transaction - Unsigned transaction payload to be signed
@@ -79,13 +96,15 @@ export class BaseClient implements ISDKFacade {
    * @param functionName - The name of the function to call
    * @param functionArgs - The arguments to pass to the function
    * @param postConditionMode - Optional post condition mode (defaults to PostConditionMode.Deny)
+   * @param fee - Optional custom transaction fee in microSTX
    * @returns The transaction ID of the contract call
    */
   async makeContractCall(
     contractAddress: string,
     functionName: string,
     functionArgs: ClarityValue[],
-    postConditionMode?: PostConditionMode
+    postConditionMode?: PostConditionMode,
+    fee?: number
   ): Promise<string> {
     const wallet = await this.storageManager.getItem<Wallet>('wallet')
     if (!wallet) {
@@ -105,7 +124,8 @@ export class BaseClient implements ISDKFacade {
       functionName,
       functionArgs,
       senderKey,
-      postConditionMode
+      postConditionMode,
+      fee
     )
   }
 
