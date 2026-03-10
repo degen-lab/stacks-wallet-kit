@@ -99,7 +99,8 @@ export interface ISDKFacade {
     functionName: string,
     functionArgs: ClarityValue[],
     postConditionMode?: PostConditionMode,
-    fee?: number
+    fee?: number,
+    accountIndex?: number
   ): Promise<string>
 
   signTransaction(

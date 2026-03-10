@@ -1,6 +1,6 @@
 {
   "name": "@degenlab/stacks-wallet-kit-core",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "main": "./dist/src/index.js",
   "type": "module",
   "exports": {
