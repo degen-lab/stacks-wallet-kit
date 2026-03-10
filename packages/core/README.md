@@ -423,16 +423,29 @@ if (hasBackup) {
 }
 
 /**
- * Make a contract call with a custom transaction fee.
+ * Make a contract call with a custom transaction fee and account index.
  * The `fee` parameter is optional and specified in microSTX.
+ * The `accountIndex` parameter is optional and defaults to 0. Use it to sign
+ * with a specific account when the wallet has multiple accounts.
  */
 import { PostConditionMode, ClarityValue } from '@stacks/transactions'
 
+// Default (account 0)
 const txId = await baseClient.makeContractCall(
   'SP000000000000000000002Q6VF78.contract-name',
   'function-name',
   [/* functionArgs as ClarityValue[] */],
   PostConditionMode.Allow,
   5000 // custom fee in microSTX
+)
+
+// With a specific account index
+const txId = await baseClient.makeContractCall(
+  'SP000000000000000000002Q6VF78.contract-name',
+  'function-name',
+  [/* functionArgs as ClarityValue[] */],
+  PostConditionMode.Allow,
+  5000,
+  1 // account index
 )
 ```

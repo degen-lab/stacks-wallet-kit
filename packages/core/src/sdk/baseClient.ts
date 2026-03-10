@@ -97,6 +97,7 @@ export class BaseClient implements ISDKFacade {
    * @param functionArgs - The arguments to pass to the function
    * @param postConditionMode - Optional post condition mode (defaults to PostConditionMode.Deny)
    * @param fee - Optional custom transaction fee in microSTX
+   * @param accountIndex - Index of the wallet account to sign with (defaults to 0)
    * @returns The transaction ID of the contract call
    */
   async makeContractCall(
@@ -104,7 +105,8 @@ export class BaseClient implements ISDKFacade {
     functionName: string,
     functionArgs: ClarityValue[],
     postConditionMode?: PostConditionMode,
-    fee?: number
+    fee?: number,
+    accountIndex: number = 0
   ): Promise<string> {
     const wallet = await this.storageManager.getItem<Wallet>('wallet')
     if (!wallet) {
@@ -115,7 +117,7 @@ export class BaseClient implements ISDKFacade {
     }
     const senderKey = derivePrivateKey(
       HDKey.fromExtendedKey(wallet.privateKey),
-      0
+      accountIndex
     )
     const [address, contractName] = contractAddress.split('.')
     return await this.stacksClient.makeContractCall(
