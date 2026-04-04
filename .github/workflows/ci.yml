@@ -30,9 +30,6 @@ jobs:
         with:
           version: 10.18.0
 
-      - name: Update npm
-        run: npm install -g npm@latest
-
       - name: Install core dependencies
         run: pnpm install --filter @degenlab/stacks-wallet-kit-core --frozen-lockfile
 
