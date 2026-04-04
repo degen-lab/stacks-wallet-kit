@@ -98,6 +98,39 @@ describe('Google authentication unit tests', () => {
     await expect(googleAuth.signIn()).rejects.toThrow(AuthError)
   })
 
+  it('should throw sign in required when silent sign in returns no user', async () => {
+    jest.spyOn(GoogleSignin, 'signInSilently').mockResolvedValueOnce({
+      type: 'noSavedCredentialFound',
+      data: null,
+    })
+
+    try {
+      await googleAuth.signInSilently()
+      fail('Should have thrown SignInRequiredError')
+    } catch (error: unknown) {
+      expect(isAuthError(error)).toBe(true)
+      if (isAuthError(error)) {
+        expect(error.code).toBe('SIGN_IN_REQUIRED')
+      }
+    }
+  })
+
+  it('should throw sign in required when Google reports sign in is required', async () => {
+    jest.spyOn(GoogleSignin, 'signInSilently').mockRejectedValueOnce({
+      code: statusCodes.SIGN_IN_REQUIRED,
+    })
+
+    try {
+      await googleAuth.signInSilently()
+      fail('Should have thrown SignInRequiredError')
+    } catch (error: unknown) {
+      expect(isAuthError(error)).toBe(true)
+      if (isAuthError(error)) {
+        expect(error.code).toBe('SIGN_IN_REQUIRED')
+      }
+    }
+  })
+
   it('should get the access token successfully', async () => {
     const result = await googleAuth.getAccessToken('oldAccessToken')
     expect(result).toBe('mock-access-token')

@@ -4,6 +4,7 @@ import {
   AuthError,
   IAuthentication,
   PlayServicesNotAvailableError,
+  SignInRequiredError,
   SignOutError,
   TokenRefreshError,
   User,
@@ -31,14 +32,41 @@ export class GoogleAuth implements IAuthentication {
     accessToken: string
     user: User | undefined
   }> {
-    const signInResponse = await GoogleSignin.signInSilently()
-    if (!signInResponse.data) {
-      throw new AuthError('User not found', 'USER_NOT_FOUND')
-    }
-    const { accessToken } = await GoogleSignin.getTokens()
-    return {
-      accessToken,
-      user: signInResponse.data,
+    try {
+      const signInResponse = await GoogleSignin.signInSilently()
+      if (!signInResponse.data) {
+        throw new SignInRequiredError()
+      }
+      const { accessToken } = await GoogleSignin.getTokens()
+      return {
+        accessToken,
+        user: signInResponse.data,
+      }
+    } catch (error) {
+      if (error instanceof SignInRequiredError) {
+        throw error
+      }
+
+      if (isErrorWithCode(error)) {
+        switch (error.code) {
+          case statusCodes.IN_PROGRESS:
+            throw new AuthenticationAlreadyInProgressError()
+          case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
+            throw new PlayServicesNotAvailableError()
+          case statusCodes.SIGN_IN_CANCELLED:
+            throw new AuthenticationCancelledError()
+          case statusCodes.SIGN_IN_REQUIRED:
+            throw new SignInRequiredError()
+          default:
+            throw new AuthError(error.message, 'AUTHENTICATION_ERROR')
+        }
+      }
+
+      throw new AuthError(
+        'An unexpected error occurred',
+        'UNEXPECTED_ERROR',
+        error
+      )
     }
   }
 

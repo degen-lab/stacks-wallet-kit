@@ -121,4 +121,22 @@ export class MobileClient extends BaseClient {
     wallet.accounts.splice(accountArrayIndex, 1)
     await this.storageManager.setItem<Wallet>('wallet', wallet)
   }
+
+  protected async refreshTokenAndRetry<T>(
+    operation: () => Promise<T>
+  ): Promise<T> {
+    const oldToken = this.backupManager.getAccessTokenFromClient()
+
+    if (!oldToken) {
+      try {
+        const newToken = await this.authenticationManager.getAccessToken('')
+        this.backupManager.updateAccessToken(newToken)
+        return operation()
+      } catch {
+        return super.refreshTokenAndRetry(operation)
+      }
+    }
+
+    return super.refreshTokenAndRetry(operation)
+  }
 }
