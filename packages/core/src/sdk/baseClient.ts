@@ -752,7 +752,7 @@ export class BaseClient implements ISDKFacade {
     return txId
   }
 
-  private async refreshTokenAndRetry<T>(
+  protected async refreshTokenAndRetry<T>(
     operation: () => Promise<T>
   ): Promise<T> {
     const oldToken = this.backupManager.getAccessTokenFromClient()

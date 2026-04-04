@@ -6,21 +6,30 @@ import {
   IStorageManager,
 } from '@degenlab/stacks-wallet-kit-core'
 
+class TestableMobileClient extends MobileClient {
+  runRefreshTokenAndRetry<T>(operation: () => Promise<T>): Promise<T> {
+    return this.refreshTokenAndRetry(operation)
+  }
+}
+
 // Mock the google signin
 jest.mock('@react-native-google-signin/google-signin', () => ({
   GoogleSignin: {
     configure: jest.fn(),
     hasPlayServices: jest.fn(),
     signIn: jest.fn(),
+    signInSilently: jest.fn(),
     signOut: jest.fn(),
     isSignedIn: jest.fn(),
     getCurrentUser: jest.fn(),
     getTokens: jest.fn(),
+    clearCachedAccessToken: jest.fn(),
   },
   statusCodes: {
     SIGN_IN_CANCELLED: '0',
     IN_PROGRESS: '1',
     PLAY_SERVICES_NOT_AVAILABLE: '2',
+    SIGN_IN_REQUIRED: '3',
   },
 }))
 
@@ -46,7 +55,7 @@ const createMockStorageManager = (): IStorageManager => {
 }
 
 describe('MobileClient', () => {
-  let mobileClient: MobileClient
+  let mobileClient: TestableMobileClient
   let mockStorageManager: IStorageManager
 
   beforeEach(() => {
@@ -54,7 +63,7 @@ describe('MobileClient', () => {
 
     mockStorageManager = createMockStorageManager()
 
-    mobileClient = new MobileClient(
+    mobileClient = new TestableMobileClient(
       'test-web-client-id',
       'test-ios-client-id',
       NetworkType.Testnet,
@@ -112,6 +121,93 @@ describe('MobileClient', () => {
       await mobileClient.getMnemonic()
 
       expect(getItemSpy).toHaveBeenCalledWith('mnemonic')
+    })
+  })
+
+  describe('refreshTokenAndRetry', () => {
+    it('should refresh with getAccessToken when no in-memory token exists', async () => {
+      const internalClient = mobileClient as TestableMobileClient & {
+        authenticationManager: {
+          getAccessToken: (oldAccessToken: string) => Promise<string>
+          signInSilently: () => Promise<{
+            accessToken: string
+            user: unknown
+          }>
+        }
+        backupManager: {
+          getAccessTokenFromClient: () => string
+          updateAccessToken: (token: string) => void
+        }
+      }
+
+      const getAccessTokenSpy = jest
+        .spyOn(internalClient.authenticationManager, 'getAccessToken')
+        .mockResolvedValueOnce('fresh-access-token')
+      const signInSilentlySpy = jest.spyOn(
+        internalClient.authenticationManager,
+        'signInSilently'
+      )
+      const getAccessTokenFromClientSpy = jest
+        .spyOn(internalClient.backupManager, 'getAccessTokenFromClient')
+        .mockReturnValueOnce('')
+      const updateAccessTokenSpy = jest
+        .spyOn(internalClient.backupManager, 'updateAccessToken')
+        .mockImplementation(() => undefined)
+      const operation = jest.fn(async () => 'completed')
+
+      await expect(
+        mobileClient.runRefreshTokenAndRetry(operation)
+      ).resolves.toBe('completed')
+
+      expect(getAccessTokenFromClientSpy).toHaveBeenCalledTimes(1)
+      expect(getAccessTokenSpy).toHaveBeenCalledWith('')
+      expect(signInSilentlySpy).not.toHaveBeenCalled()
+      expect(updateAccessTokenSpy).toHaveBeenCalledWith('fresh-access-token')
+      expect(operation).toHaveBeenCalledTimes(1)
+    })
+
+    it('should fall back to the base client retry if direct token fetch fails', async () => {
+      const internalClient = mobileClient as TestableMobileClient & {
+        authenticationManager: {
+          getAccessToken: (oldAccessToken: string) => Promise<string>
+          signInSilently: () => Promise<{
+            accessToken: string
+            user: unknown
+          }>
+        }
+        backupManager: {
+          getAccessTokenFromClient: () => string
+          updateAccessToken: (token: string) => void
+        }
+      }
+
+      const getAccessTokenSpy = jest
+        .spyOn(internalClient.authenticationManager, 'getAccessToken')
+        .mockRejectedValueOnce(new Error('No cached token'))
+      const signInSilentlySpy = jest
+        .spyOn(internalClient.authenticationManager, 'signInSilently')
+        .mockResolvedValueOnce({
+          accessToken: 'silent-access-token',
+          user: undefined,
+        })
+      const getAccessTokenFromClientSpy = jest
+        .spyOn(internalClient.backupManager, 'getAccessTokenFromClient')
+        .mockReturnValueOnce('')
+        .mockReturnValueOnce('')
+      const updateAccessTokenSpy = jest
+        .spyOn(internalClient.backupManager, 'updateAccessToken')
+        .mockImplementation(() => undefined)
+      const operation = jest.fn(async () => 'completed')
+
+      await expect(
+        mobileClient.runRefreshTokenAndRetry(operation)
+      ).resolves.toBe('completed')
+
+      expect(getAccessTokenFromClientSpy).toHaveBeenCalledTimes(2)
+      expect(getAccessTokenSpy).toHaveBeenCalledWith('')
+      expect(signInSilentlySpy).toHaveBeenCalledTimes(1)
+      expect(updateAccessTokenSpy).toHaveBeenCalledWith('silent-access-token')
+      expect(operation).toHaveBeenCalledTimes(1)
     })
   })
 
