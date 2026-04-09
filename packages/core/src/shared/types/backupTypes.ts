@@ -61,7 +61,9 @@ export type User = {
   }
   scopes: string[]
   /**
-   * JWT (JSON Web Token) that serves as a secure credential for your user's identity.
+   * JWT from the Google Sign-In user profile (e.g. React Native `GoogleSignin` user snapshot).
+   * Separate from the top-level `idToken` returned by `loginWithGoogle()` / `IAuthentication.signIn()`,
+   * which is the OIDC `id_token` from the OAuth token response for backend verification.
    */
   idToken: string | null
   /**

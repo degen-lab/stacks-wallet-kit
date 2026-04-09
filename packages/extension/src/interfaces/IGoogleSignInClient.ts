@@ -4,7 +4,7 @@ export interface IGoogleSignInClient {
     googleClientSecret: string,
     redirectUri: string,
     scopes: string[]
-  ): Promise<{ accessToken: string; refreshToken: string }>
+  ): Promise<{ accessToken: string; refreshToken: string; idToken?: string }>
 
   getAccessToken(
     googleClientId: string,

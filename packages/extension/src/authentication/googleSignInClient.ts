@@ -42,7 +42,7 @@ export class GoogleSigninClient implements IGoogleSignInClient {
     googleClientSecret: string,
     redirectUri: string,
     scopes: string[]
-  ): Promise<{ accessToken: string; refreshToken: string }> {
+  ): Promise<{ accessToken: string; refreshToken: string; idToken?: string }> {
     const authUrl = new URL(AUTHENTICATION_URL)
     authUrl.searchParams.set('client_id', googleClientId)
     authUrl.searchParams.set('response_type', 'code')
@@ -106,6 +106,7 @@ export class GoogleSigninClient implements IGoogleSignInClient {
     return {
       accessToken: tokens.access_token,
       refreshToken: tokens.refresh_token,
+      idToken: tokens.id_token || '',
     }
   }
 
@@ -163,6 +164,7 @@ export class GoogleSigninClient implements IGoogleSignInClient {
   ): Promise<{
     access_token: string
     refresh_token: string
+    id_token?: string
     expires_at: number
     salt: string
   }> {
@@ -198,6 +200,7 @@ export class GoogleSigninClient implements IGoogleSignInClient {
     return {
       access_token: tokens.access_token,
       refresh_token: tokens.refresh_token,
+      id_token: tokens.id_token,
       expires_at: expiresAt,
       salt: '',
     }

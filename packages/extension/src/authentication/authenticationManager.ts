@@ -16,8 +16,12 @@ export class AuthenticationManager implements IAuthentication {
     private storageManager: IStorageManager
   ) {}
 
-  async signIn(): Promise<{ accessToken: string; user: User | undefined }> {
-    const { accessToken, refreshToken } =
+  async signIn(): Promise<{
+    accessToken: string
+    idToken: string
+    user: User | undefined
+  }> {
+    const { accessToken, refreshToken, idToken } =
       await this.googleSignInClient.loginWithGoogle(
         this.googleClientId,
         this.googleClientSecret,
@@ -25,7 +29,7 @@ export class AuthenticationManager implements IAuthentication {
         this.scopes
       )
     await this.storageManager.setItem('refreshToken', refreshToken)
-    return { accessToken, user: undefined }
+    return { accessToken, idToken: idToken || '', user: undefined }
   }
 
   /**
@@ -49,6 +53,7 @@ export class AuthenticationManager implements IAuthentication {
 
   async signInSilently(): Promise<{
     accessToken: string
+    idToken: string
     user: User | undefined
   }> {
     const storedRefreshToken =
@@ -63,6 +68,7 @@ export class AuthenticationManager implements IAuthentication {
         this.googleClientSecret,
         storedRefreshToken
       ),
+      idToken: '',
       user: undefined,
     }
   }

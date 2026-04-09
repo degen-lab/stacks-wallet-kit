@@ -466,19 +466,23 @@ export class BaseClient implements ISDKFacade {
 
   /**
    * Login with Google
-   * @returns The access token, whether the user has a backup and the user data from Google
+   * @returns The Google access token for Google APIs, the Google ID token for backend auth, whether the user has a backup and the user data from Google
+   * @see {@link https://developers.google.com/identity/sign-in/web/backend-auth | Authenticate with a backend server (ID token)}
    */
   async loginWithGoogle(): Promise<{
     accessToken: string
+    idToken: string
     hasBackup: boolean
     userData: User | undefined
   }> {
     try {
-      const { accessToken, user } = await this.authenticationManager.signIn()
+      const { accessToken, idToken, user } =
+        await this.authenticationManager.signIn()
       this.backupManager.updateAccessToken(accessToken)
       const hasBackup = await this.backupManager.hasWalletBackup()
       return {
         accessToken,
+        idToken,
         hasBackup,
         userData: user,
       }

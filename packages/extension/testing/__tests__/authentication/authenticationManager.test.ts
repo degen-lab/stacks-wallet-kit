@@ -46,12 +46,14 @@ describe('Authentication manager unit tests', () => {
       mockGoogleSignInClient.loginWithGoogle.mockResolvedValueOnce({
         accessToken,
         refreshToken,
+        idToken: 'mock-id-token',
       })
 
       const result = await authenticationManager.signIn()
 
       expect(result).toEqual({
         accessToken,
+        idToken: 'mock-id-token',
         user: undefined,
       })
       expect(mockGoogleSignInClient.loginWithGoogle).toHaveBeenCalledWith(
@@ -81,6 +83,7 @@ describe('Authentication manager unit tests', () => {
       mockGoogleSignInClient.loginWithGoogle.mockResolvedValueOnce({
         accessToken,
         refreshToken,
+        idToken: 'mock-id-token',
       })
 
       await customManager.signIn()
@@ -225,6 +228,7 @@ describe('Authentication manager unit tests', () => {
 
       expect(result).toEqual({
         accessToken: newAccessToken,
+        idToken: '',
         user: undefined,
       })
       expect(mockGoogleSignInClient.getAccessToken).toHaveBeenCalledWith(
@@ -326,10 +330,12 @@ describe('Authentication manager unit tests', () => {
       mockGoogleSignInClient.loginWithGoogle.mockResolvedValueOnce({
         accessToken,
         refreshToken,
+        idToken: 'mock-id-token',
       })
       const signInResult = await authenticationManager.signIn()
       expect(signInResult).toEqual({
         accessToken,
+        idToken: 'mock-id-token',
         user: undefined,
       })
 
@@ -356,6 +362,7 @@ describe('Authentication manager unit tests', () => {
       mockGoogleSignInClient.loginWithGoogle.mockResolvedValueOnce({
         accessToken,
         refreshToken,
+        idToken: 'mock-id-token',
       })
       await authenticationManager.signIn()
 
@@ -368,6 +375,7 @@ describe('Authentication manager unit tests', () => {
       const silentResult = await authenticationManager.signInSilently()
       expect(silentResult).toEqual({
         accessToken: newAccessToken,
+        idToken: '',
         user: undefined,
       })
     })
