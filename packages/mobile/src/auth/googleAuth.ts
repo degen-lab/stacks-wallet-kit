@@ -30,6 +30,7 @@ export class GoogleAuth implements IAuthentication {
 
   async signInSilently(): Promise<{
     accessToken: string
+    idToken: string
     user: User | undefined
   }> {
     try {
@@ -37,9 +38,10 @@ export class GoogleAuth implements IAuthentication {
       if (!signInResponse.data) {
         throw new SignInRequiredError()
       }
-      const { accessToken } = await GoogleSignin.getTokens()
+      const { accessToken, idToken } = await GoogleSignin.getTokens()
       return {
         accessToken,
+        idToken,
         user: signInResponse.data,
       }
     } catch (error) {
@@ -70,16 +72,21 @@ export class GoogleAuth implements IAuthentication {
     }
   }
 
-  async signIn(): Promise<{ accessToken: string; user: User | undefined }> {
+  async signIn(): Promise<{
+    accessToken: string
+    idToken: string
+    user: User | undefined
+  }> {
     try {
       await GoogleSignin.hasPlayServices()
       const signInResponse = await GoogleSignin.signIn()
       if (!signInResponse.data) {
         throw new AuthError('User not found', 'USER_NOT_FOUND')
       }
-      const { accessToken } = await GoogleSignin.getTokens()
+      const { accessToken, idToken } = await GoogleSignin.getTokens()
       return {
         accessToken,
+        idToken,
         user: signInResponse.data,
       }
     } catch (error) {

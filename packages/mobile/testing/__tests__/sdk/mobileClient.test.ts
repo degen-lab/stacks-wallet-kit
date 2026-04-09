@@ -131,6 +131,7 @@ describe('MobileClient', () => {
           getAccessToken: (oldAccessToken: string) => Promise<string>
           signInSilently: () => Promise<{
             accessToken: string
+            idToken: string
             user: unknown
           }>
         }
@@ -172,6 +173,7 @@ describe('MobileClient', () => {
           getAccessToken: (oldAccessToken: string) => Promise<string>
           signInSilently: () => Promise<{
             accessToken: string
+            idToken: string
             user: unknown
           }>
         }
@@ -188,6 +190,7 @@ describe('MobileClient', () => {
         .spyOn(internalClient.authenticationManager, 'signInSilently')
         .mockResolvedValueOnce({
           accessToken: 'silent-access-token',
+          idToken: 'silent-id-token',
           user: undefined,
         })
       const getAccessTokenFromClientSpy = jest

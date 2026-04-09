@@ -9,9 +9,14 @@ import { IEncryptionManager } from '../../../src/shared/interfaces/IEncryption'
 
 export const authenticationManager: IAuthentication = {
   signIn: jest.fn(
-    async (): Promise<{ accessToken: string; user: User | undefined }> => {
+    async (): Promise<{
+      accessToken: string
+      idToken: string
+      user: User | undefined
+    }> => {
       return {
         accessToken: 'mock-access-token',
+        idToken: 'mock-id-token',
         user: {
           user: {
             id: 'mock-user-id',
@@ -33,9 +38,14 @@ export const authenticationManager: IAuthentication = {
   }),
   getAccessToken: jest.fn(),
   signInSilently: jest.fn(
-    async (): Promise<{ accessToken: string; user: User | undefined }> => {
+    async (): Promise<{
+      accessToken: string
+      idToken: string
+      user: User | undefined
+    }> => {
       return {
         accessToken: 'mock-access-token',
+        idToken: 'mock-id-token',
         user: {
           user: {
             id: 'mock-user-id',

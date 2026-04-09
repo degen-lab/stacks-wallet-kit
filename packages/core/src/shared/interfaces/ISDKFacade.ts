@@ -9,6 +9,7 @@ import { NetworkType, User, Wallet, WalletAccount } from '../types/backupTypes'
 export interface ISDKFacade {
   loginWithGoogle(): Promise<{
     accessToken: string
+    idToken: string
     hasBackup: boolean
     userData: User | undefined
   }>

@@ -37,6 +37,7 @@ describe('Google authentication unit tests', () => {
     const result = await googleAuth.signIn()
     expect(result).toEqual({
       accessToken: 'mock-access-token',
+      idToken: 'mock-id-token',
       user: {
         email: 'mocked-email@example.com',
         name: 'Test user',

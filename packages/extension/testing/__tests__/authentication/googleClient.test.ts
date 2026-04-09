@@ -170,6 +170,7 @@ describe('Google client unit tests', () => {
       expect(result).toEqual({
         accessToken: 'test-access-token',
         refreshToken: 'test-refresh-token',
+        idToken: '',
       })
       expect(mockLaunchWebAuthFlow).toHaveBeenCalledWith(
         expect.objectContaining({

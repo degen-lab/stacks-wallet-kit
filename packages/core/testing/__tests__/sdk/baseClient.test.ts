@@ -90,12 +90,14 @@ describe('BaseClient', () => {
       }
       jest.spyOn(authenticationManager, 'signIn').mockResolvedValueOnce({
         accessToken: 'mock-access-token',
+        idToken: 'mock-id-token',
         user: mockUser,
       })
       jest.spyOn(backupManager, 'hasWalletBackup').mockResolvedValueOnce(true)
       const result = await baseClient.loginWithGoogle()
       expect(result).toEqual({
         accessToken: 'mock-access-token',
+        idToken: 'mock-id-token',
         hasBackup: true,
         userData: mockUser,
       })
@@ -128,6 +130,7 @@ describe('BaseClient', () => {
       }
       jest.spyOn(authenticationManager, 'signIn').mockResolvedValueOnce({
         accessToken: 'mock-access-token',
+        idToken: 'mock-id-token',
         user: mockUser,
       })
       jest
