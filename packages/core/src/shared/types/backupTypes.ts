@@ -1,3 +1,5 @@
+import type { AuthProvider } from './authTypes'
+
 export type WalletEnvelope = {
   version: 1
   walletId: string
@@ -24,8 +26,15 @@ export type GoogleDriveBackupEntry = {
   name?: string | null
   appProperties?: {
     walletName?: string | null
+    backupKind?: string | null
+    walletId?: string | null
   } | null
   properties?: Record<string, string | null> | null
+}
+
+export type BackupWriteResult = {
+  succeeded: AuthProvider[]
+  failed: { provider: AuthProvider; error: unknown }[]
 }
 
 export enum NetworkType {
@@ -48,27 +57,4 @@ export type Wallet = {
   createdAt: string
   accounts: Array<WalletAccount>
   deletedIndices?: number[]
-}
-
-export type User = {
-  user: {
-    id: string
-    name: string | null
-    email: string
-    photo: string | null
-    familyName: string | null
-    givenName: string | null
-  }
-  scopes: string[]
-  /**
-   * JWT from the Google Sign-In user profile (e.g. React Native `GoogleSignin` user snapshot).
-   * Separate from the top-level `idToken` returned by `loginWithGoogle()` / `IAuthentication.signIn()`,
-   * which is the OIDC `id_token` from the OAuth token response for backend verification.
-   */
-  idToken: string | null
-  /**
-   * Not null only if a valid webClientId and offlineAccess: true was
-   * specified in configure().
-   */
-  serverAuthCode: string | null
 }

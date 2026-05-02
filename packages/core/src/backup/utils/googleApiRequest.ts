@@ -25,7 +25,7 @@ export async function googleApiRequest<T>(
   })
 
   if (!res.ok) {
-    if (res.status === 403) {
+    if (res.status === 401 || res.status === 403) {
       throw new AccessTokenError()
     }
     const text = await res.text()
@@ -52,7 +52,7 @@ export function buildMultipartBody(
     `--${boundary}`,
     'Content-Type: application/json',
     '',
-    typeof body === 'string' ? body : JSON.stringify(body),
+    JSON.stringify(body),
     `--${boundary}--`,
     '',
   ].join('\r\n')

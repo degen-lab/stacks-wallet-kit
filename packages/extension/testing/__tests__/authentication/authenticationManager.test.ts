@@ -52,9 +52,15 @@ describe('Authentication manager unit tests', () => {
       const result = await authenticationManager.signIn()
 
       expect(result).toEqual({
-        accessToken,
-        idToken: 'mock-id-token',
-        user: undefined,
+        provider: 'google',
+        providerUserId: '',
+        email: null,
+        displayName: null,
+        photoUri: null,
+        credentials: {
+          accessToken,
+          idToken: 'mock-id-token',
+        },
       })
       expect(mockGoogleSignInClient.loginWithGoogle).toHaveBeenCalledWith(
         googleClientId,
@@ -227,9 +233,14 @@ describe('Authentication manager unit tests', () => {
       const result = await authenticationManager.signInSilently()
 
       expect(result).toEqual({
-        accessToken: newAccessToken,
-        idToken: '',
-        user: undefined,
+        provider: 'google',
+        providerUserId: '',
+        email: null,
+        displayName: null,
+        photoUri: null,
+        credentials: {
+          accessToken: newAccessToken,
+        },
       })
       expect(mockGoogleSignInClient.getAccessToken).toHaveBeenCalledWith(
         googleClientId,
@@ -334,9 +345,15 @@ describe('Authentication manager unit tests', () => {
       })
       const signInResult = await authenticationManager.signIn()
       expect(signInResult).toEqual({
-        accessToken,
-        idToken: 'mock-id-token',
-        user: undefined,
+        provider: 'google',
+        providerUserId: '',
+        email: null,
+        displayName: null,
+        photoUri: null,
+        credentials: {
+          accessToken,
+          idToken: 'mock-id-token',
+        },
       })
 
       // Get new access token
@@ -374,9 +391,14 @@ describe('Authentication manager unit tests', () => {
       )
       const silentResult = await authenticationManager.signInSilently()
       expect(silentResult).toEqual({
-        accessToken: newAccessToken,
-        idToken: '',
-        user: undefined,
+        provider: 'google',
+        providerUserId: '',
+        email: null,
+        displayName: null,
+        photoUri: null,
+        credentials: {
+          accessToken: newAccessToken,
+        },
       })
     })
 
