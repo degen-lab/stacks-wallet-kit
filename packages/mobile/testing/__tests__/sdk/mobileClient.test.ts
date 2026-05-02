@@ -1,14 +1,23 @@
 import { MobileClient } from '../../../src/sdk/MobileClient'
 import {
+  AuthProvider,
   NetworkType,
   Wallet,
   WalletNotStoredError,
   IStorageManager,
 } from '@degenlab/stacks-wallet-kit-core'
+import { GoogleSignin } from '@react-native-google-signin/google-signin'
 
 class TestableMobileClient extends MobileClient {
-  runRefreshTokenAndRetry<T>(operation: () => Promise<T>): Promise<T> {
-    return this.refreshTokenAndRetry(operation)
+  runRefreshTokenAndRetry<T>(
+    provider: AuthProvider,
+    operation: () => Promise<T>
+  ): Promise<T> {
+    return this.refreshTokenAndRetry(provider, operation)
+  }
+
+  getRegisteredProviderAccessToken(provider: AuthProvider): string {
+    return this.getProviderAccessToken(provider)
   }
 }
 
@@ -55,7 +64,7 @@ const createMockStorageManager = (): IStorageManager => {
 }
 
 describe('MobileClient', () => {
-  let mobileClient: TestableMobileClient
+  let mobileClient: MobileClient
   let mockStorageManager: IStorageManager
 
   beforeEach(() => {
@@ -63,14 +72,10 @@ describe('MobileClient', () => {
 
     mockStorageManager = createMockStorageManager()
 
-    mobileClient = new TestableMobileClient(
-      'test-web-client-id',
-      'test-ios-client-id',
-      NetworkType.Testnet,
-      {
-        storageManager: mockStorageManager,
-      }
-    )
+    mobileClient = new MobileClient({
+      network: NetworkType.Testnet,
+      storageManager: mockStorageManager,
+    })
   })
 
   describe('getMnemonic', () => {
@@ -125,91 +130,79 @@ describe('MobileClient', () => {
   })
 
   describe('refreshTokenAndRetry', () => {
-    it('should refresh with getAccessToken when no in-memory token exists', async () => {
-      const internalClient = mobileClient as TestableMobileClient & {
-        authenticationManager: {
-          getAccessToken: (oldAccessToken: string) => Promise<string>
-          signInSilently: () => Promise<{
-            accessToken: string
-            idToken: string
-            user: unknown
-          }>
-        }
-        backupManager: {
-          getAccessTokenFromClient: () => string
-          updateAccessToken: (token: string) => void
-        }
-      }
+    const createGoogleClient = (): TestableMobileClient =>
+      new TestableMobileClient({
+        google: {
+          webClientId: 'test-web-client-id',
+          iosClientId: 'test-ios-client-id',
+        },
+        network: NetworkType.Testnet,
+        storageManager: mockStorageManager,
+      })
 
-      const getAccessTokenSpy = jest
-        .spyOn(internalClient.authenticationManager, 'getAccessToken')
-        .mockResolvedValueOnce('fresh-access-token')
-      const signInSilentlySpy = jest.spyOn(
-        internalClient.authenticationManager,
-        'signInSilently'
-      )
-      const getAccessTokenFromClientSpy = jest
-        .spyOn(internalClient.backupManager, 'getAccessTokenFromClient')
-        .mockReturnValueOnce('')
-      const updateAccessTokenSpy = jest
-        .spyOn(internalClient.backupManager, 'updateAccessToken')
-        .mockImplementation(() => undefined)
+    it('should refresh with getAccessToken when no in-memory token exists', async () => {
+      const googleClient = createGoogleClient()
       const operation = jest.fn(async () => 'completed')
 
+      jest.spyOn(GoogleSignin, 'getTokens').mockResolvedValueOnce({
+        accessToken: 'fresh-access-token',
+        idToken: 'fresh-id-token',
+      })
+      const signInSilentlySpy = jest.spyOn(GoogleSignin, 'signInSilently')
+
       await expect(
-        mobileClient.runRefreshTokenAndRetry(operation)
+        googleClient.runRefreshTokenAndRetry('google', operation)
       ).resolves.toBe('completed')
 
-      expect(getAccessTokenFromClientSpy).toHaveBeenCalledTimes(1)
-      expect(getAccessTokenSpy).toHaveBeenCalledWith('')
+      expect(GoogleSignin.clearCachedAccessToken).not.toHaveBeenCalled()
+      expect(GoogleSignin.getTokens).toHaveBeenCalledTimes(1)
       expect(signInSilentlySpy).not.toHaveBeenCalled()
-      expect(updateAccessTokenSpy).toHaveBeenCalledWith('fresh-access-token')
+      expect(googleClient.getRegisteredProviderAccessToken('google')).toBe(
+        'fresh-access-token'
+      )
       expect(operation).toHaveBeenCalledTimes(1)
     })
 
-    it('should fall back to the base client retry if direct token fetch fails', async () => {
-      const internalClient = mobileClient as TestableMobileClient & {
-        authenticationManager: {
-          getAccessToken: (oldAccessToken: string) => Promise<string>
-          signInSilently: () => Promise<{
-            accessToken: string
-            idToken: string
-            user: unknown
-          }>
-        }
-        backupManager: {
-          getAccessTokenFromClient: () => string
-          updateAccessToken: (token: string) => void
-        }
-      }
+    it('should fall back to silent sign-in if direct token fetch fails', async () => {
+      const googleClient = createGoogleClient()
+      const operation = jest.fn(async () => 'completed')
 
-      const getAccessTokenSpy = jest
-        .spyOn(internalClient.authenticationManager, 'getAccessToken')
+      jest
+        .spyOn(GoogleSignin, 'getTokens')
         .mockRejectedValueOnce(new Error('No cached token'))
-      const signInSilentlySpy = jest
-        .spyOn(internalClient.authenticationManager, 'signInSilently')
         .mockResolvedValueOnce({
           accessToken: 'silent-access-token',
           idToken: 'silent-id-token',
-          user: undefined,
         })
-      const getAccessTokenFromClientSpy = jest
-        .spyOn(internalClient.backupManager, 'getAccessTokenFromClient')
-        .mockReturnValueOnce('')
-        .mockReturnValueOnce('')
-      const updateAccessTokenSpy = jest
-        .spyOn(internalClient.backupManager, 'updateAccessToken')
-        .mockImplementation(() => undefined)
-      const operation = jest.fn(async () => 'completed')
+      const signInSilentlySpy = jest
+        .spyOn(GoogleSignin, 'signInSilently')
+        .mockResolvedValueOnce({
+          type: 'success',
+          data: {
+            user: {
+              id: 'mock-user-id',
+              email: 'mocked-email@example.com',
+              name: 'Test user',
+              photo: null,
+              familyName: null,
+              givenName: 'Test',
+            },
+            scopes: [],
+            idToken: 'silent-id-token',
+            serverAuthCode: null,
+          },
+        })
 
       await expect(
-        mobileClient.runRefreshTokenAndRetry(operation)
+        googleClient.runRefreshTokenAndRetry('google', operation)
       ).resolves.toBe('completed')
 
-      expect(getAccessTokenFromClientSpy).toHaveBeenCalledTimes(2)
-      expect(getAccessTokenSpy).toHaveBeenCalledWith('')
+      expect(GoogleSignin.clearCachedAccessToken).not.toHaveBeenCalled()
+      expect(GoogleSignin.getTokens).toHaveBeenCalledTimes(2)
       expect(signInSilentlySpy).toHaveBeenCalledTimes(1)
-      expect(updateAccessTokenSpy).toHaveBeenCalledWith('silent-access-token')
+      expect(googleClient.getRegisteredProviderAccessToken('google')).toBe(
+        'silent-access-token'
+      )
       expect(operation).toHaveBeenCalledTimes(1)
     })
   })

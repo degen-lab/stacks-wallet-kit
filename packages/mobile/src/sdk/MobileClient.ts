@@ -1,80 +1,100 @@
 import {
+  AuthProvider,
   BackupManager,
   BaseClient,
   EncryptionManager,
   GoogleBackupClient,
+  IAccessTokenBackupProvider,
+  IAuthentication,
   IStorageManager,
-  StackingClient,
-  STACKS_API_BASE_URL,
-  STACKS_TESTNET_API_BASE_URL,
-  StacksClient,
   NetworkType,
-  WalletManager,
+  STACKS_API_BASE_URL,
   STACKS_MOBILE_DEVNET_API_BASE_URL,
+  STACKS_TESTNET_API_BASE_URL,
+  StackingClient,
+  StacksClient,
   Wallet,
+  WalletManager,
   WalletNotStoredError,
 } from '@degenlab/stacks-wallet-kit-core'
+import { Platform } from 'react-native'
+import { AppleAuth } from '../auth/appleAuth'
 import { GoogleAuth } from '../auth/googleAuth'
+import { CloudKitBackupClient } from '../backup/cloudKitBackupClient'
 import { StorageFactory } from '../storage/storageFactory'
 
-/**
- *
- * @param webClientId - The web client ID
- * @param iosClientId - The iOS client ID
- * @param network - The network to use
- * @param scopes - Optional additional OAuth scopes. The default scope 'https://www.googleapis.com/auth/drive.appdata' is always included and will be merged with any additional scopes you provide
- * @param storageManager - Optional custom storage manager. If not provided, defaults to SecureStore for Expo or KeyChainStorage for React Native
- * @param stacksConfig - Optional Stacks API configuration. Defaults to the following URLs:
- * - mainnetUrl: https://api.hiro.so/
- * - testnetUrl: https://api.testnet.hiro.so/
- * - devnetUrl: http://10.0.2.2:3999/ (emulator compatible)
- */
-export class MobileClient extends BaseClient {
-  constructor(
-    webClientId: string,
-    iosClientId: string,
-    network: NetworkType,
-    configOptions?: {
-      scopes?: string[]
-      storageManager?: IStorageManager
-      mainnetUrl?: string
-      testnetUrl?: string
-      devnetUrl?: string
-    }
-  ) {
-    const mainnetBaseUrl = configOptions?.mainnetUrl || STACKS_API_BASE_URL
-    const testnetBaseUrl =
-      configOptions?.testnetUrl || STACKS_TESTNET_API_BASE_URL
-    const devnetBaseUrl =
-      configOptions?.devnetUrl || STACKS_MOBILE_DEVNET_API_BASE_URL
+export type MobileClientConfig = {
+  google?: {
+    webClientId: string
+    iosClientId: string
+    scopes?: string[]
+  }
+  network: NetworkType
+  storageManager?: IStorageManager
+  mainnetUrl?: string
+  testnetUrl?: string
+  devnetUrl?: string
+}
 
-    const authenticationManager = new GoogleAuth(
-      webClientId,
-      iosClientId,
-      configOptions?.scopes
-    )
-    const backupClient = new GoogleBackupClient()
-    const backupManager = new BackupManager(backupClient)
+export class MobileClient extends BaseClient {
+  /**
+   * @param config.google.webClientId - The Google web client ID
+   * @param config.google.iosClientId - The Google iOS client ID
+   * @param config.network - The network to use
+   * @param config.google.scopes - Optional additional OAuth scopes. The default scope 'https://www.googleapis.com/auth/drive.appdata' is always included and will be merged with any additional scopes you provide
+   * @param config.storageManager - Optional custom storage manager. If not provided, defaults to SecureStore for Expo or KeyChainStorage for React Native
+   * @param config.mainnetUrl - Defaults to https://api.hiro.so/
+   * @param config.testnetUrl - Defaults to https://api.testnet.hiro.so/
+   * @param config.devnetUrl - Defaults to http://10.0.2.2:3999/ (emulator compatible)
+   */
+  constructor(config: MobileClientConfig) {
+    const mainnetBaseUrl = config.mainnetUrl ?? STACKS_API_BASE_URL
+    const testnetBaseUrl = config.testnetUrl ?? STACKS_TESTNET_API_BASE_URL
+    const devnetBaseUrl = config.devnetUrl ?? STACKS_MOBILE_DEVNET_API_BASE_URL
+
+    const authenticationManagers = new Map<AuthProvider, IAuthentication>()
+    const accessTokenBackupProviders = new Map<
+      AuthProvider,
+      IAccessTokenBackupProvider
+    >()
+    const backupManager = new BackupManager()
     const walletManager = new WalletManager()
     const encryptionManager = new EncryptionManager()
-    const dataManager = configOptions?.storageManager
-      ? configOptions.storageManager
-      : StorageFactory.getInstance()
-    const stacksClient = new StacksClient(
-      network,
-      mainnetBaseUrl,
-      testnetBaseUrl,
-      devnetBaseUrl
-    )
-    const stackingClient = new StackingClient(network, devnetBaseUrl)
+    const storage = config.storageManager ?? StorageFactory.getInstance()
+
+    if (config.google) {
+      const googleBackupClient = new GoogleBackupClient()
+      authenticationManagers.set(
+        'google',
+        new GoogleAuth(
+          config.google.webClientId,
+          config.google.iosClientId,
+          config.google.scopes
+        )
+      )
+      backupManager.registerProvider(googleBackupClient)
+      accessTokenBackupProviders.set('google', googleBackupClient)
+    }
+
+    if (Platform.OS === 'ios') {
+      authenticationManagers.set('apple', new AppleAuth())
+      backupManager.registerProvider(new CloudKitBackupClient())
+    }
+
     super(
-      authenticationManager,
+      authenticationManagers,
       backupManager,
       walletManager,
       encryptionManager,
-      dataManager,
-      stacksClient,
-      stackingClient
+      storage,
+      new StacksClient(
+        config.network,
+        mainnetBaseUrl,
+        testnetBaseUrl,
+        devnetBaseUrl
+      ),
+      new StackingClient(config.network, devnetBaseUrl),
+      accessTokenBackupProviders
     )
   }
 
@@ -103,40 +123,18 @@ export class MobileClient extends BaseClient {
       )
     }
 
-    // Find the account by its index property
-    const accountArrayIndex = wallet.accounts.findIndex(
+    const arrayIndex = wallet.accounts.findIndex(
       (acc) => acc.index === accountIndex
     )
-
-    if (accountArrayIndex === -1) {
+    if (arrayIndex === -1) {
       throw new Error(`Account with index ${accountIndex} not found in wallet`)
     }
 
-    // Add to deleted indices list
-    const deletedIndices = wallet.deletedIndices || []
-    deletedIndices.push(accountIndex)
-    wallet.deletedIndices = deletedIndices.sort((a, b) => a - b) // Keep sorted
-
-    // Remove the account
-    wallet.accounts.splice(accountArrayIndex, 1)
+    wallet.deletedIndices = [
+      ...(wallet.deletedIndices ?? []),
+      accountIndex,
+    ].sort((a, b) => a - b)
+    wallet.accounts.splice(arrayIndex, 1)
     await this.storageManager.setItem<Wallet>('wallet', wallet)
-  }
-
-  protected async refreshTokenAndRetry<T>(
-    operation: () => Promise<T>
-  ): Promise<T> {
-    const oldToken = this.backupManager.getAccessTokenFromClient()
-
-    if (!oldToken) {
-      try {
-        const newToken = await this.authenticationManager.getAccessToken('')
-        this.backupManager.updateAccessToken(newToken)
-        return operation()
-      } catch {
-        return super.refreshTokenAndRetry(operation)
-      }
-    }
-
-    return super.refreshTokenAndRetry(operation)
   }
 }

@@ -33,15 +33,19 @@ describe('Google authentication unit tests', () => {
   beforeEach(() => {
     jest.clearAllMocks()
   })
-  it('should sign in successfully and return mocked user info', async () => {
+
+  it('should sign in successfully and return AuthenticatedUser', async () => {
     const result = await googleAuth.signIn()
     expect(result).toEqual({
-      accessToken: 'mock-access-token',
-      idToken: 'mock-id-token',
-      user: {
-        email: 'mocked-email@example.com',
-        name: 'Test user',
-        id: 'mock-user-id',
+      provider: 'google',
+      providerUserId: 'mock-user-id',
+      email: 'mocked-email@example.com',
+      displayName: 'Test user',
+      photoUri: null,
+      credentials: {
+        accessToken: 'mock-access-token',
+        idToken: 'mock-id-token',
+        serverAuthCode: undefined,
       },
     })
   })

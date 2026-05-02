@@ -1,6 +1,6 @@
 # stacks-wallet-kit/mobile [![npm](https://img.shields.io/npm/v/@degenlab/stacks-wallet-kit-mobile?color=red)](https://www.npmjs.com/package/@degenlab/stacks-wallet-kit-mobile)
 
-A React Native/Expo SDK for building Stacks blockchain applications with Google authentication and wallet management.
+A React Native/Expo SDK for building Stacks blockchain applications with Google and Apple authentication, wallet management, and wallet backup.
 
 ## Purpose
 
@@ -117,6 +117,51 @@ import { View, Text } from 'react-native'
 
 ### Platform-Specific Configuration
 
+#### Apple Sign-In and iCloud CloudKit Backup
+
+Apple Sign-In and CloudKit backup are iOS-only. Google auth and Google Drive backup remain available when you pass a `google` configuration.
+
+Both features depend on the app's registered iOS bundle identifier. Create or open the App ID in Apple Developer for the exact `ios.bundleIdentifier` used by the app, for example `com.yourcompany.yourapp`.
+
+For Apple Sign-In:
+
+- Enable **Sign in with Apple** for the App ID.
+- Add `ios.usesAppleSignIn: true`.
+- Add the `expo-apple-authentication` config plugin.
+
+For CloudKit backup:
+
+- Enable **iCloud** and select **CloudKit** for the App ID.
+- Create or select the CloudKit container used for wallet backups.
+- Add the `@degenlab/stacks-wallet-kit-mobile` config plugin.
+- Regenerate/download provisioning profiles after changing capabilities.
+
+Configure both plugins when the app uses both Apple Sign-In and CloudKit backup:
+
+```json
+{
+  "expo": {
+    "ios": {
+      "bundleIdentifier": "com.yourcompany.yourapp",
+      "usesAppleSignIn": true
+    },
+    "plugins": [
+      "expo-apple-authentication",
+      [
+        "@degenlab/stacks-wallet-kit-mobile",
+        { "containerIdentifier": "iCloud.com.yourcompany.yourapp" }
+      ]
+    ]
+  }
+}
+```
+
+`expo-apple-authentication` enables the native Apple Sign-In module used by `signIn('apple')`. The `@degenlab/stacks-wallet-kit-mobile` plugin adds the CloudKit iCloud service, the CloudKit container entitlement, and the `Info.plist` value that the CloudKit backup module reads at runtime.
+
+If you only use Apple Sign-In, you do not need the wallet-kit plugin. If you only use CloudKit backup, you still need the wallet-kit plugin, but you do not need to call `signIn('apple')` first; CloudKit uses the signed-in iCloud account on the device.
+
+CloudKit backup stores the encrypted wallet envelope in the signed-in iCloud user's private CloudKit database. The user must be signed into iCloud on the device, and the app build must use a provisioning profile that includes the CloudKit capability and container.
+
 #### Android Emulator
 
 When testing on Android emulator, use `10.0.2.2` instead of `localhost` for devnet URLs:
@@ -137,14 +182,14 @@ const getDevnetUrl = (): string => {
   }
 }
 
-const client = new MobileClient(
-  'web-client-id',
-  'ios-client-id',
-  NetworkType.Devnet,
-  {
-    devnetUrl: getDevnetUrl(),
-  }
-)
+const client = new MobileClient({
+  google: {
+    webClientId: 'web-client-id',
+    iosClientId: 'ios-client-id',
+  },
+  network: NetworkType.Devnet,
+  devnetUrl: getDevnetUrl(),
+})
 ```
 
 #### Web Platform
@@ -177,15 +222,15 @@ When running on web (Expo web), the polyfills work the same way, but make sure t
 ```typescript
 import { MobileClient, NetworkType } from '@degenlab/stacks-wallet-kit-mobile'
 
-const client = new MobileClient(
-  'your-web-client-id',
-  'your-ios-client-id',
-  NetworkType.Testnet,
-  {
+const client = new MobileClient({
+  google: {
+    webClientId: 'your-web-client-id',
+    iosClientId: 'your-ios-client-id',
     scopes: ['email', 'profile'],
-    devnetUrl: 'http://10.0.2.2:3999',
-  }
-)
+  },
+  network: NetworkType.Testnet,
+  devnetUrl: 'http://10.0.2.2:3999',
+})
 
 client.setNetwork(NetworkType.Devnet)
 
@@ -201,12 +246,6 @@ const signedTx = await client.signTransaction(
   account.index,
   unsignedTransaction // StacksTransactionWire
 )
-
-// Check if a wallet backup exists
-const hasBackup = await client.hasBackup()
-if (hasBackup) {
-  console.log('Wallet backup exists')
-}
 
 // Make a contract call with custom fee
 import { PostConditionMode, ClarityValue } from '@stacks/transactions'
@@ -225,18 +264,18 @@ const txId = await client.makeContractCall(
 ### Constructor Parameters
 
 ```typescript
-new MobileClient(
-  webClientId: string,        // Required: Google OAuth web client ID
-  iosClientId: string,        // Required: Google OAuth iOS client ID
-  network: NetworkType,       // Required: Initial network (Mainnet, Testnet, or Devnet)
-  configOptions?: {           // Optional: Configuration options
+new MobileClient({
+  google?: {
+    webClientId: string       // Google OAuth web client ID
+    iosClientId: string       // Google OAuth iOS client ID
     scopes?: string[]         // Optional: Additional OAuth scopes
-    storageManager?: IStorageManager  // Optional: Custom storage manager
-    mainnetUrl?: string       // Optional: Custom mainnet API URL
-    testnetUrl?: string       // Optional: Custom testnet API URL
-    devnetUrl?: string        // Optional: Custom devnet API URL
   }
-)
+  network: NetworkType        // Required: Initial network (Mainnet, Testnet, or Devnet)
+  storageManager?: IStorageManager  // Optional: Custom storage manager
+  mainnetUrl?: string         // Optional: Custom mainnet API URL
+  testnetUrl?: string         // Optional: Custom testnet API URL
+  devnetUrl?: string          // Optional: Custom devnet API URL
+})
 ```
 
 ### Default Configuration
@@ -267,8 +306,8 @@ new MobileClient(
 
 `MobileClient` automatically initializes the following components:
 
-- **Authentication**: `GoogleAuth` with provided client IDs and scopes
-- **Backup Manager**: `BackupManager` with `GoogleBackupClient`
+- **Authentication**: `GoogleAuth` when Google config is provided, plus `AppleAuth` on iOS
+- **Backup Manager**: `BackupManager` with registered Google Drive and iOS CloudKit providers
 - **Wallet Manager**: `WalletManager` for wallet operations
 - **Encryption Manager**: `EncryptionManager` for encryption/decryption
 - **Stacks Client**: `StacksClient` with configured network and API URLs
@@ -278,28 +317,34 @@ new MobileClient(
 
 ### Authentication
 
-#### `loginWithGoogle()`
+#### `signIn(provider)`
 
-Sign in with Google and check if a wallet backup exists.
+Sign in with Google or Apple.
 
 ```typescript
-import { User } from '@degenlab/stacks-wallet-kit-core'
+const { user } = await client.signIn('google')
+const hasBackup = await client.hasBackup('google')
 
-const result: {
-  accessToken: string
-  hasBackup: boolean
-  userData: User | undefined
-} = await client.loginWithGoogle()
+if (user.provider === 'google') {
+  console.log(user.credentials.accessToken)
+  console.log(user.credentials.idToken)
+}
+```
 
-// Access the returned values
-console.log('Access Token:', result.accessToken)
-console.log('Has Backup:', result.hasBackup)
-console.log('User Data:', result.userData) // Contains Google user information
+On iOS, Apple Sign-In returns an `AuthenticatedUser` with `providerUserId`, optional email/profile fields, and Apple credentials under `user.credentials`.
+
+```typescript
+const { user } = await client.signIn('apple')
+
+if (user.provider === 'apple') {
+  console.log(user.credentials.authorizationCode)
+  console.log(user.credentials.rawNonce)
+}
 ```
 
 #### `signOut()`
 
-Sign out from Google authentication.
+Sign out from registered authentication providers.
 
 ```typescript
 await client.signOut()
@@ -367,50 +412,52 @@ Retrieve the stored mnemonic phrase from secure storage.
 
 ```typescript
 const mnemonic: string | null = await client.getMnemonic()
-
-if (mnemonic) {
-  console.log('Mnemonic:', mnemonic)
-} else {
-  console.log('No mnemonic found')
-}
 ```
 
 **Note:** Returns `null` if no mnemonic is stored. The mnemonic is securely stored when creating or storing a wallet.
 
 ### Backup
 
-#### `backupWallet(password: string)`
+#### `backupWallet(password: string, targets?: AuthProvider[])`
 
-Backup the wallet to Google Drive.
+Backup the wallet to one or more providers.
 
 ```typescript
-await client.backupWallet('wallet-password')
+await client.backupWallet('wallet-password', ['google'])
+await client.backupWallet('wallet-password', ['apple'])
+await client.backupWallet('wallet-password', ['google', 'apple'])
 ```
 
-#### `retrieveWallet(password: string)`
+#### `retrieveWalletFromProvider(password: string, provider: AuthProvider)`
 
-Retrieve a wallet from Google Drive backup.
+Retrieve a wallet backup from a specific provider.
 
 ```typescript
 const { wallet, mnemonic }: { wallet: Wallet; mnemonic: string } =
-  await client.retrieveWallet('wallet-password')
+  await client.retrieveWalletFromProvider('wallet-password', 'google')
+
+const restoredFromCloudKit = await client.retrieveWalletFromProvider(
+  'wallet-password',
+  'apple'
+)
 ```
 
-#### `deleteBackup(password: string)`
+#### `deleteBackup(provider?: AuthProvider)`
 
-Delete the wallet backup from Google Drive.
+Delete the wallet backup from a specific provider.
 
 ```typescript
-await client.deleteBackup('wallet-password')
+await client.deleteBackup('google')
+await client.deleteBackup('apple')
 ```
 
-#### `deleteBackupWithoutPassword()`
+#### Deprecated Google-only wrappers
 
-Delete the wallet backup without requiring a password.
+The previous Google-only facade methods are still available for backward compatibility, but they are deprecated:
 
-```typescript
-await client.deleteBackupWithoutPassword()
-```
+- `loginWithGoogle()` -> use `signIn('google')` and `hasBackup('google')`
+- `retrieveWallet(password)` -> use `retrieveWalletFromProvider(password, 'google')`
+- `deleteBackupWithoutPassword()` -> use `deleteBackup('google')`
 
 ### Stacks
 
@@ -673,14 +720,14 @@ class CustomStorage implements IStorageManager {
   }
 }
 
-const client = new MobileClient(
-  'web-client-id',
-  'ios-client-id',
-  NetworkType.Testnet,
-  {
-    storageManager: new CustomStorage(),
-  }
-)
+const client = new MobileClient({
+  google: {
+    webClientId: 'web-client-id',
+    iosClientId: 'ios-client-id',
+  },
+  network: NetworkType.Testnet,
+  storageManager: new CustomStorage(),
+})
 ```
 
 ## Types
@@ -723,33 +770,29 @@ interface StackingPool {
 
 ```typescript
 import { MobileClient, NetworkType } from '@degenlab/stacks-wallet-kit-mobile'
-import { Wallet, WalletAccount, User } from '@degenlab/stacks-wallet-kit-core'
+import { Wallet, WalletAccount } from '@degenlab/stacks-wallet-kit-core'
 
 async function walletFlow(): Promise<void> {
-  const client: MobileClient = new MobileClient(
-    'web-client-id',
-    'ios-client-id',
-    NetworkType.Devnet,
-    { devnetUrl: 'http://10.0.2.2:3999' }
-  )
+  const client: MobileClient = new MobileClient({
+    google: {
+      webClientId: 'web-client-id',
+      iosClientId: 'ios-client-id',
+    },
+    network: NetworkType.Devnet,
+    devnetUrl: 'http://10.0.2.2:3999',
+  })
 
-  const {
-    hasBackup,
-    userData,
-  }: {
-    accessToken: string
-    hasBackup: boolean
-    userData: User | undefined
-  } = await client.loginWithGoogle()
+  await client.signIn('google')
+  const hasBackup = await client.hasBackup('google')
 
   let wallet: Wallet
   if (hasBackup) {
     const result: { wallet: Wallet; mnemonic: string } =
-      await client.retrieveWallet('password')
+      await client.retrieveWalletFromProvider('password', 'google')
     wallet = result.wallet
   } else {
     wallet = await client.createWallet() // Optional passphrase
-    await client.backupWallet('password')
+    await client.backupWallet('password', ['google'])
   }
 
   const accounts: WalletAccount[] = await client.getWalletAccounts()
@@ -775,11 +818,13 @@ import { MobileClient, NetworkType } from '@degenlab/stacks-wallet-kit-mobile'
 import { WalletAccount } from '@degenlab/stacks-wallet-kit-core'
 
 async function transferNFT(): Promise<void> {
-  const client: MobileClient = new MobileClient(
-    'web-client-id',
-    'ios-client-id',
-    NetworkType.Devnet
-  )
+  const client: MobileClient = new MobileClient({
+    google: {
+      webClientId: 'web-client-id',
+      iosClientId: 'ios-client-id',
+    },
+    network: NetworkType.Devnet,
+  })
 
   const accounts: WalletAccount[] = await client.getWalletAccounts()
   const account: WalletAccount = accounts[0]
@@ -806,11 +851,13 @@ import {
 } from '@stacks/transactions'
 
 async function customContractCall(): Promise<void> {
-  const client: MobileClient = new MobileClient(
-    'web-client-id',
-    'ios-client-id',
-    NetworkType.Devnet
-  )
+  const client: MobileClient = new MobileClient({
+    google: {
+      webClientId: 'web-client-id',
+      iosClientId: 'ios-client-id',
+    },
+    network: NetworkType.Devnet,
+  })
 
   const contractAddress: string =
     'SP1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ.my-contract'

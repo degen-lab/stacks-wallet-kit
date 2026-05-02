@@ -27,6 +27,7 @@ module.exports = {
     '^@react-native-google-signin/google-signin$':
       '<rootDir>/testing/__mocks__/google-signin.ts',
     '^expo-secure-store$': '<rootDir>/testing/__mocks__/expo-secure-store.ts',
+    '^react-native$': '<rootDir>/testing/__mocks__/react-native.ts',
     '^react-native-keychain$':
       '<rootDir>/testing/__mocks__/react-native-keychain.ts',
     '^crypto$': require.resolve('crypto-browserify'),
