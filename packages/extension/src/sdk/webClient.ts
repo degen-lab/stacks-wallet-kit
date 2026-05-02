@@ -1,10 +1,13 @@
 import {
+  AuthProvider,
   BackupManager,
+  BackupWriteResult,
   BaseClient,
   decryptData,
   encryptData,
   EncryptionManager,
   GoogleBackupClient,
+  IAccessTokenBackupProvider,
   InvalidPasswordError,
   NetworkType,
   StackingClient,
@@ -57,6 +60,10 @@ export class WebClient extends BaseClient {
       : SCOPES
     const googleSignInClient = new GoogleSigninClient()
     const backupClient = new GoogleBackupClient()
+    const accessTokenBackupProviders = new Map<
+      AuthProvider,
+      IAccessTokenBackupProvider
+    >([['google', backupClient]])
     const stacksClient = new StacksClient(
       network,
       mainnetBaseUrl,
@@ -77,16 +84,18 @@ export class WebClient extends BaseClient {
       dataManager
     )
     const encryptionManager = new EncryptionManager()
-    const backupManager = new BackupManager(backupClient)
+    const backupManager = new BackupManager()
+    backupManager.registerProvider(backupClient)
     const walletManager = new WalletManager()
     super(
-      authenticationManager,
+      new Map([['google', authenticationManager]]),
       backupManager,
       walletManager,
       encryptionManager,
       dataManager,
       stacksClient,
-      stackingClient
+      stackingClient,
+      accessTokenBackupProviders
     )
   }
 
@@ -112,7 +121,10 @@ export class WebClient extends BaseClient {
    * @param password - The password to backup the wallet with (must match the encryption password)
    * @throws InvalidPasswordError if the password doesn't match the encryption password
    */
-  async backupWallet(password: string): Promise<void> {
+  async backupWallet(
+    password: string,
+    targets: AuthProvider[] = ['google']
+  ): Promise<BackupWriteResult> {
     if ('checkEncryptionPasswordMatches' in this.storageManager) {
       const webStorageManager = this.storageManager as IWebStorageManager
       const isPasswordValid =
@@ -121,6 +133,6 @@ export class WebClient extends BaseClient {
         throw new InvalidPasswordError()
       }
     }
-    return super.backupWallet(password)
+    return super.backupWallet(password, targets)
   }
 }
