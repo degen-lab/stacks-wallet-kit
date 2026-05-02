@@ -1,6 +1,13 @@
 import {
+  AuthProvider,
+  AuthenticatedUser,
+  BackupWriteResult,
+  GoogleAuthenticatedUser,
+  IAccessTokenBackupProvider,
   IAuthentication,
   IBackupManager,
+  ISilentSignInCapable,
+  ITokenRefreshCapable,
   InvalidAmountError,
   InvalidLockPeriod,
   IStackingClient,
@@ -11,7 +18,6 @@ import {
   MaxAmountSmallerThanAmountError,
   MinimumThresholdNotMetError,
   NetworkType,
-  User,
   Wallet,
   WalletAccount,
   WalletEnvelope,
@@ -19,7 +25,12 @@ import {
 import { WalletNotStoredError } from '../shared/errors/SDKError'
 import { IEncryptionManager } from '../shared/interfaces/IEncryption'
 import { ISDKFacade } from '../shared/interfaces/ISDKFacade'
-import { AccessTokenError } from '../shared/errors/backupErrors'
+import {
+  AccessTokenError,
+  BackupProviderNotRegisteredError,
+  BackupWriteFailedError,
+} from '../shared/errors/backupErrors'
+import { AuthProviderNotRegisteredError } from '../shared/errors/authErrors'
 import { InvalidMnemonicError } from '../shared/errors/encryptionErrors'
 import {
   derivePrivateKey,
@@ -37,30 +48,88 @@ import {
 } from '@stacks/transactions'
 
 export class BaseClient implements ISDKFacade {
+  protected authenticationManagers: Map<AuthProvider, IAuthentication>
+
+  protected accessTokenBackupProviders: Map<
+    AuthProvider,
+    IAccessTokenBackupProvider
+  >
+
   constructor(
-    protected authenticationManager: IAuthentication,
+    authenticationManagers: Map<AuthProvider, IAuthentication>,
     protected backupManager: IBackupManager,
     protected walletManager: IWalletManager,
     protected encryptionManager: IEncryptionManager,
     protected storageManager: IStorageManager,
     protected stacksClient: IStacksClient,
-    protected stackingClient: IStackingClient
-  ) {}
+    protected stackingClient: IStackingClient,
+    accessTokenBackupProviders?: Map<AuthProvider, IAccessTokenBackupProvider>
+  ) {
+    this.authenticationManagers = authenticationManagers
+    this.accessTokenBackupProviders = accessTokenBackupProviders ?? new Map()
+  }
 
-  /**
-   * Check if a wallet backup exists in the configured backup provider.
-   * @returns True if a backup exists, false otherwise
-   */
-  async hasBackup(): Promise<boolean> {
+  async signIn(provider: AuthProvider): Promise<{ user: AuthenticatedUser }> {
+    return {
+      user: await this.signInWithProvider(provider),
+    }
+  }
+
+  async getBackupAvailability(provider: AuthProvider): Promise<boolean> {
     try {
-      return await this.backupManager.hasWalletBackup()
+      const backupProvider = this.backupManager.getProvider(provider)
+      if (!backupProvider) {
+        return false
+      }
+      return await backupProvider.isAvailable()
     } catch (error) {
       if (error instanceof AccessTokenError) {
-        return this.refreshTokenAndRetry(async () =>
-          this.backupManager.hasWalletBackup()
-        )
+        try {
+          return await this.refreshTokenAndRetry(provider, async () => {
+            const backupProvider = this.backupManager.getProvider(provider)
+            return backupProvider ? backupProvider.isAvailable() : false
+          })
+        } catch {
+          return false
+        }
+      }
+      return false
+    }
+  }
+
+  async hasBackup(provider: AuthProvider = 'google'): Promise<boolean> {
+    try {
+      return await this.withAccessTokenRetry(provider, () =>
+        this.backupManager.hasBackup(provider)
+      )
+    } catch (error) {
+      if (error instanceof BackupProviderNotRegisteredError) {
+        return false
       }
       throw error
+    }
+  }
+
+  /**
+   * @deprecated Use `signIn('google')` and `hasBackup('google')` instead.
+   */
+  async loginWithGoogle(): Promise<{
+    accessToken: string
+    idToken: string
+    hasBackup: boolean
+    userData: GoogleAuthenticatedUser
+  }> {
+    const { user } = await this.signIn('google')
+    if (user.provider !== 'google') {
+      throw new AuthProviderNotRegisteredError(
+        'Authentication provider "google" returned a non-Google user'
+      )
+    }
+    return {
+      accessToken: user.credentials.accessToken,
+      idToken: user.credentials.idToken ?? '',
+      hasBackup: await this.hasBackup('google'),
+      userData: user,
     }
   }
 
@@ -465,41 +534,6 @@ export class BaseClient implements ISDKFacade {
   }
 
   /**
-   * Login with Google
-   * @returns The Google access token for Google APIs, the Google ID token for backend auth, whether the user has a backup and the user data from Google
-   * @see {@link https://developers.google.com/identity/sign-in/web/backend-auth | Authenticate with a backend server (ID token)}
-   */
-  async loginWithGoogle(): Promise<{
-    accessToken: string
-    idToken: string
-    hasBackup: boolean
-    userData: User | undefined
-  }> {
-    try {
-      const { accessToken, idToken, user } =
-        await this.authenticationManager.signIn()
-      this.backupManager.updateAccessToken(accessToken)
-      const hasBackup = await this.backupManager.hasWalletBackup()
-      return {
-        accessToken,
-        idToken,
-        hasBackup,
-        userData: user,
-      }
-    } catch (error) {
-      if (error instanceof AccessTokenError) {
-        const oldToken = this.backupManager.getAccessTokenFromClient()
-        const newToken =
-          await this.authenticationManager.getAccessToken(oldToken)
-        this.backupManager.updateAccessToken(newToken)
-        return this.loginWithGoogle()
-      }
-
-      throw error
-    }
-  }
-
-  /**
    * Create a new wallet
    * @param passphrase - Optional passphrase for the wallet
    * @returns The wallet
@@ -512,144 +546,86 @@ export class BaseClient implements ISDKFacade {
     return wallet
   }
 
-  /**
-   * Backup the wallet
-   * @param password - The password to backup the wallet with
-   * @returns The transaction ID of the backup
-   */
-  async backupWallet(password: string): Promise<void> {
+  async backupWallet(
+    password: string,
+    targets: AuthProvider[] = ['google']
+  ): Promise<BackupWriteResult> {
+    const envelope = await this.createBackupEnvelope(password)
+
     try {
-      const wallet = await this.storageManager.getItem<Wallet>('wallet')
-      if (!wallet) {
-        throw new WalletNotStoredError(
-          'Wallet not found in local storage',
-          'WALLET_NOT_FOUND'
-        )
-      }
-
-      const mnemonic = await this.storageManager.getItem<string>('mnemonic')
-      if (!mnemonic) {
-        throw new WalletNotStoredError(
-          'Mnemonic not found in local storage',
-          'MNEMONIC_NOT_FOUND'
-        )
-      }
-      const encryptedData = await this.encryptionManager.encryptWallet(
-        password,
-        wallet,
-        mnemonic
-      )
-      const fingerprint = await getFingerPrintFromMnemonic(mnemonic)
-      const envelope: WalletEnvelope = {
-        version: 1,
-        walletId: fingerprint,
-        createdAt: new Date(),
-        mnemonic: encryptedData.encryptedMnemonic,
-        mnemonicNonce: encryptedData.mnemonicNonce,
-        wallet: encryptedData.encryptedWallet,
-        walletNonce: encryptedData.walletNonce,
-        salt: encryptedData.salt,
-        accountsCount: wallet.accounts.length,
-        protection: {
-          kdf: {
-            name: 'pbkdf2',
-            iterations: encryptedData.iterations,
-            salt: encryptedData.salt,
-          },
-          wrappedMasterKey: encryptedData.wrappedMasterKey,
-          wrapNonce: encryptedData.wrapNonce,
-        },
-      }
-
-      await this.backupManager.saveBackup(fingerprint, envelope)
+      return await this.backupManager.saveToTargets(envelope, targets)
     } catch (error) {
-      if (error instanceof AccessTokenError) {
-        return this.refreshTokenAndRetry(
-          async () => await this.backupWallet(password)
+      if (
+        error instanceof BackupWriteFailedError &&
+        error.failures.length === 1 &&
+        targets.length === 1 &&
+        error.failures[0].provider === targets[0] &&
+        error.failures[0].error instanceof AccessTokenError
+      ) {
+        return this.refreshTokenAndRetry(targets[0], () =>
+          this.backupManager.saveToTargets(envelope, targets)
         )
       }
+
       throw error
     }
   }
 
+  async retrieveWalletFromProvider(
+    password: string,
+    provider: AuthProvider
+  ): Promise<{
+    wallet: Wallet
+    mnemonic: string
+  }> {
+    const envelope = await this.withAccessTokenRetry(provider, () =>
+      this.backupManager.retrieveFrom(provider)
+    )
+    const decryptedData = await this.encryptionManager.decryptWallet(
+      password,
+      envelope
+    )
+    await this.storageManager.setItem('wallet', decryptedData.wallet)
+    await this.storageManager.setItem('mnemonic', decryptedData.mnemonic)
+    return {
+      wallet: decryptedData.wallet,
+      mnemonic: decryptedData.mnemonic,
+    }
+  }
+
   /**
-   * Retrieve a wallet from the backup
-   * @param password - The password to retrieve the wallet with
-   * @returns The wallet and mnemonic
+   * @deprecated Use `retrieveWalletFromProvider(password, 'google')` instead.
    */
   async retrieveWallet(password: string): Promise<{
     wallet: Wallet
     mnemonic: string
   }> {
-    try {
-      const envelope: WalletEnvelope = await this.backupManager.retrieveBackup()
-      const decryptedData = await this.encryptionManager.decryptWallet(
-        password,
-        envelope
-      )
-      await this.storageManager.setItem('wallet', decryptedData.wallet)
-      await this.storageManager.setItem('mnemonic', decryptedData.mnemonic)
-      return {
-        wallet: decryptedData.wallet,
-        mnemonic: decryptedData.mnemonic,
-      }
-    } catch (error) {
-      if (error instanceof AccessTokenError) {
-        return this.refreshTokenAndRetry(
-          async () => await this.retrieveWallet(password)
-        )
-      }
-      throw error
-    }
+    return this.retrieveWalletFromProvider(password, 'google')
   }
 
-  /**
-   * Sign out of the wallet
-   * @returns The transaction ID of the sign out
-   */
   async signOut(): Promise<void> {
-    try {
-      await this.authenticationManager.signOut()
-      await this.storageManager.clear()
-      this.backupManager.updateAccessToken('')
-    } catch (error) {
-      if (error instanceof AccessTokenError) {
-        return this.refreshTokenAndRetry(async () => await this.signOut())
-      }
-      throw error
+    for (const [provider, authenticationManager] of this
+      .authenticationManagers) {
+      await authenticationManager.signOut()
+      this.clearProviderAccessToken(provider)
     }
+
+    await this.storageManager.clear()
+  }
+
+  async deleteBackup(provider: AuthProvider = 'google'): Promise<void> {
+    await this.withAccessTokenRetry(provider, () =>
+      this.backupManager.deleteFrom(provider)
+    )
   }
 
   /**
-   * Delete the backup of the wallet
-   * @param password - The password to delete the backup with
-   * @returns The transaction ID of the backup deletion
+   * @deprecated Use `deleteBackup('google')` instead.
    */
-  async deleteBackup(password: string): Promise<void> {
-    try {
-      const mnemonic = await this.storageManager.getItem<string>('mnemonic')
-      if (!mnemonic) {
-        throw new WalletNotStoredError(
-          'Mnemonic not found in local storage',
-          'MNEMONIC_NOT_FOUND'
-        )
-      }
-      const backupFileName = await getFingerPrintFromMnemonic(mnemonic)
-      await this.backupManager.deleteBackup(backupFileName)
-    } catch (error) {
-      if (error instanceof AccessTokenError) {
-        return this.refreshTokenAndRetry(
-          async () => await this.deleteBackup(password)
-        )
-      }
-      throw error
-    }
+  async deleteBackupWithoutPassword(): Promise<void> {
+    await this.deleteBackup('google')
   }
 
-  /**
-   * Get the accounts in the wallet
-   * @returns The accounts in the wallet
-   */
   async getWalletAccounts(): Promise<WalletAccount[]> {
     const wallet = await this.storageManager.getItem<Wallet>('wallet')
     if (!wallet) {
@@ -658,30 +634,8 @@ export class BaseClient implements ISDKFacade {
     return wallet.accounts
   }
 
-  /**
-   * Get the balance of the provided account in STX
-   * @param account - The stacks wallet account
-   * @returns The STX balance of the account
-   */
   async getBalance(account: WalletAccount): Promise<number> {
     return await this.stacksClient.getBalance(account)
-  }
-
-  /**
-   * Delete the backup of the wallet without a password
-   * @returns The transaction ID of the backup deletion
-   */
-  async deleteBackupWithoutPassword(): Promise<void> {
-    try {
-      await this.backupManager.deleteExistingBackup()
-    } catch (error) {
-      if (error instanceof AccessTokenError) {
-        return this.refreshTokenAndRetry(
-          async () => await this.deleteBackupWithoutPassword()
-        )
-      }
-      throw error
-    }
   }
 
   /**
@@ -758,16 +712,192 @@ export class BaseClient implements ISDKFacade {
 
   protected async refreshTokenAndRetry<T>(
     operation: () => Promise<T>
-  ): Promise<T> {
-    const oldToken = this.backupManager.getAccessTokenFromClient()
-    if (!oldToken) {
-      const { accessToken } = await this.authenticationManager.signInSilently()
-      this.backupManager.updateAccessToken(accessToken)
-    } else {
-      const newToken = await this.authenticationManager.getAccessToken(oldToken)
+  ): Promise<T>
 
-      this.backupManager.updateAccessToken(newToken)
+  protected async refreshTokenAndRetry<T>(
+    provider: AuthProvider,
+    operation: () => Promise<T>
+  ): Promise<T>
+
+  protected async refreshTokenAndRetry<T>(
+    providerOrOperation: AuthProvider | (() => Promise<T>),
+    maybeOperation?: () => Promise<T>
+  ): Promise<T> {
+    const provider =
+      typeof providerOrOperation === 'function' ? 'google' : providerOrOperation
+    const operation =
+      typeof providerOrOperation === 'function'
+        ? providerOrOperation
+        : maybeOperation
+
+    if (!operation) {
+      throw new AccessTokenError('Retry operation is missing')
     }
-    return operation()
+
+    const authenticationManager = this.getAuthenticationManager(provider)
+    const oldToken = this.getProviderAccessToken(provider)
+    if (oldToken && this.isTokenRefreshCapable(authenticationManager)) {
+      const newToken = await authenticationManager.getAccessToken(oldToken)
+      this.setProviderAccessToken(provider, newToken)
+      return operation()
+    }
+
+    let tokenRefreshError: unknown
+    if (this.isTokenRefreshCapable(authenticationManager)) {
+      try {
+        const newToken = await authenticationManager.getAccessToken()
+        this.setProviderAccessToken(provider, newToken)
+        return operation()
+      } catch (error) {
+        tokenRefreshError = error
+      }
+    }
+
+    if (this.isSilentSignInCapable(authenticationManager)) {
+      const user = await authenticationManager.signInSilently()
+      const accessToken = this.getAuthenticatedAccessToken(user)
+      if (!accessToken) {
+        throw new AccessTokenError(
+          `Provider "${provider}" did not return an access token`
+        )
+      }
+      this.setProviderAccessToken(provider, accessToken)
+      return operation()
+    }
+
+    if (tokenRefreshError) {
+      throw tokenRefreshError
+    }
+
+    throw new AccessTokenError(
+      `Provider "${provider}" does not support access token refresh`
+    )
+  }
+
+  private async withAccessTokenRetry<T>(
+    provider: AuthProvider,
+    operation: () => Promise<T>
+  ): Promise<T> {
+    try {
+      return await operation()
+    } catch (error) {
+      if (error instanceof AccessTokenError) {
+        return this.refreshTokenAndRetry(provider, operation)
+      }
+      throw error
+    }
+  }
+
+  private getAuthenticationManager(provider: AuthProvider): IAuthentication {
+    const authenticationManager = this.authenticationManagers.get(provider)
+    if (!authenticationManager) {
+      throw new AuthProviderNotRegisteredError(
+        `Authentication provider "${provider}" is not registered`
+      )
+    }
+    return authenticationManager
+  }
+
+  protected setProviderAccessToken(
+    provider: AuthProvider,
+    accessToken?: string
+  ): void {
+    if (!accessToken) {
+      return
+    }
+    this.accessTokenBackupProviders.get(provider)?.setAccessToken(accessToken)
+  }
+
+  protected getProviderAccessToken(provider: AuthProvider): string {
+    return this.accessTokenBackupProviders.get(provider)?.getAccessToken() ?? ''
+  }
+
+  protected clearProviderAccessToken(provider: AuthProvider): void {
+    this.accessTokenBackupProviders.get(provider)?.setAccessToken('')
+  }
+
+  private async getStoredWalletAndMnemonic(): Promise<{
+    wallet: Wallet
+    mnemonic: string
+  }> {
+    const wallet = await this.storageManager.getItem<Wallet>('wallet')
+    if (!wallet) {
+      throw new WalletNotStoredError(
+        'Wallet not found in local storage',
+        'WALLET_NOT_FOUND'
+      )
+    }
+
+    const mnemonic = await this.storageManager.getItem<string>('mnemonic')
+    if (!mnemonic) {
+      throw new WalletNotStoredError(
+        'Mnemonic not found in local storage',
+        'MNEMONIC_NOT_FOUND'
+      )
+    }
+
+    return { wallet, mnemonic }
+  }
+
+  private async createBackupEnvelope(
+    password: string
+  ): Promise<WalletEnvelope> {
+    const { wallet, mnemonic } = await this.getStoredWalletAndMnemonic()
+    const encryptedData = await this.encryptionManager.encryptWallet(
+      password,
+      wallet,
+      mnemonic
+    )
+
+    return {
+      version: 1,
+      walletId: await getFingerPrintFromMnemonic(mnemonic),
+      createdAt: new Date(),
+      mnemonic: encryptedData.encryptedMnemonic,
+      mnemonicNonce: encryptedData.mnemonicNonce,
+      wallet: encryptedData.encryptedWallet,
+      walletNonce: encryptedData.walletNonce,
+      salt: encryptedData.salt,
+      accountsCount: wallet.accounts.length,
+      protection: {
+        kdf: {
+          name: 'pbkdf2',
+          iterations: encryptedData.iterations,
+          salt: encryptedData.salt,
+        },
+        wrappedMasterKey: encryptedData.wrappedMasterKey,
+        wrapNonce: encryptedData.wrapNonce,
+      },
+    }
+  }
+
+  protected isTokenRefreshCapable(
+    authenticationManager: IAuthentication
+  ): authenticationManager is IAuthentication & ITokenRefreshCapable {
+    return 'getAccessToken' in authenticationManager
+  }
+
+  protected isSilentSignInCapable(
+    authenticationManager: IAuthentication
+  ): authenticationManager is IAuthentication & ISilentSignInCapable {
+    return 'signInSilently' in authenticationManager
+  }
+
+  private async signInWithProvider(
+    provider: AuthProvider
+  ): Promise<AuthenticatedUser> {
+    const authenticationManager = this.getAuthenticationManager(provider)
+    const user = await authenticationManager.signIn()
+    this.setProviderAccessToken(
+      provider,
+      this.getAuthenticatedAccessToken(user)
+    )
+    return user
+  }
+
+  private getAuthenticatedAccessToken(
+    user: AuthenticatedUser
+  ): string | undefined {
+    return user.provider === 'google' ? user.credentials.accessToken : undefined
   }
 }
