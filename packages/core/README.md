@@ -1,10 +1,10 @@
 # stacks-wallet-kit-core [![npm](https://img.shields.io/npm/v/@degenlab/stacks-wallet-kit-core?color=red)](https://www.npmjs.com/package/@degenlab/stacks-wallet-kit-core)
 
-A platform-agnostic core package providing shared functionality, types, and interfaces for the Google Wallet Kit ecosystem. This package is used by both the mobile SDK (`@degenlab/stacks-wallet-kit-mobile`) and the browser extension SDK (`@degenlab/stacks-wallet-kit-extension`).
+A platform-agnostic core package providing shared functionality, types, and interfaces for the Stacks Wallet Kit ecosystem. This package is used by both the mobile SDK (`@degenlab/stacks-wallet-kit-mobile`) and the browser extension SDK (`@degenlab/stacks-wallet-kit-extension`).
 
 ## Purpose
 
-The core package provides the foundational building blocks for building Stacks blockchain applications with Google authentication and wallet management. It includes:
+The core package provides the foundational building blocks for building Stacks blockchain applications with Google and Apple authentication, wallet management, and wallet backup. It includes:
 
 - **Interfaces** for implementing custom storage managers, authentication, and other components
 - **Types** for wallets, accounts, network configurations, and more
@@ -70,7 +70,7 @@ const account: WalletAccount = {
 
 #### `WalletEnvelope`
 
-Encrypted wallet backup format for Google Drive.
+Encrypted wallet backup format used by registered backup providers.
 
 ```typescript
 import { WalletEnvelope } from '@degenlab/stacks-wallet-kit-core'
@@ -155,26 +155,22 @@ class CustomStorage implements IStorageManager {
 Interface for implementing custom authentication.
 
 ```typescript
-import { IAuthentication } from '@degenlab/stacks-wallet-kit-core'
+import {
+  AuthenticatedUser,
+  AuthProvider,
+  IAuthentication,
+} from '@degenlab/stacks-wallet-kit-core'
 
 class CustomAuth implements IAuthentication {
-  async signIn(): Promise<{ accessToken: string; user: object }> {
+  readonly provider: AuthProvider = 'google'
+
+  async signIn(): Promise<AuthenticatedUser> {
     // Your implementation
-    // Returns the access token and user data from authentication
+    // Returns provider identity, profile data, and provider credentials
   }
 
   async signOut(): Promise<void> {
     // Your implementation
-  }
-
-  async getAccessToken(oldAccessToken: string): Promise<string> {
-    // Your implementation
-    // Refreshes the access token using the old token
-  }
-
-  async signInSilently(): Promise<{ accessToken: string; user: object }> {
-    // Your implementation
-    // Signs in silently using stored refresh token
   }
 }
 ```
@@ -214,16 +210,17 @@ class CustomStacksClient implements IStacksClient {
 Interface defining the complete SDK API surface.
 
 ```typescript
-import { ISDKFacade, User } from '@degenlab/stacks-wallet-kit-core'
+import {
+  AuthenticatedUser,
+  AuthProvider,
+  ISDKFacade,
+  Wallet,
+} from '@degenlab/stacks-wallet-kit-core'
 
 class CustomSDK implements ISDKFacade {
-  async loginWithGoogle(): Promise<{
-    accessToken: string
-    hasBackup: boolean
-    userData: User | undefined
-  }> {
+  async signIn(provider: AuthProvider): Promise<{ user: AuthenticatedUser }> {
     // Your implementation
-    // Returns access token, backup status, and user data from Google authentication
+    // Signs in with the requested provider
   }
 
   async createWallet(passphrase?: string): Promise<Wallet> {
@@ -306,7 +303,9 @@ import {
 } from '@degenlab/stacks-wallet-kit-core'
 
 const backupClient = new GoogleBackupClient()
-const manager = new BackupManager(backupClient)
+const manager = new BackupManager()
+
+manager.registerProvider(backupClient)
 ```
 
 ### Constants
@@ -415,12 +414,6 @@ const signedTx = await baseClient.signTransaction(
  * Returns true if a backup is found, false otherwise.
  */
 const hasBackup: boolean = await baseClient.hasBackup()
-
-if (hasBackup) {
-  console.log('Wallet backup exists')
-} else {
-  console.log('No wallet backup found')
-}
 
 /**
  * Make a contract call with a custom transaction fee and account index.

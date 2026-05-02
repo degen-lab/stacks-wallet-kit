@@ -1,6 +1,6 @@
 # stacks-wallet-kit
 
-A monorepo containing platform-agnostic and platform-specific SDKs for building Stacks blockchain applications with Google authentication and wallet management.
+A monorepo containing platform-agnostic and platform-specific SDKs for building Stacks blockchain applications with Google and Apple authentication, wallet management, and wallet backup.
 
 ## Architecture
 
@@ -36,7 +36,8 @@ React Native/Expo SDK for mobile applications.
 **Contains:**
 
 - **MobileClient**: Extends `BaseClient` with React Native-specific implementations
-- **Google Authentication**: React Native Google Sign-In integration
+- **Authentication**: React Native Google Sign-In integration and iOS Apple Sign-In support
+- **Backup**: Google Drive and iOS CloudKit backup providers
 - **Storage**: React Native storage implementations (SecureStore, Keychain)
 
 **Purpose**: Provides a ready-to-use SDK for React Native/Expo applications with mobile-optimized storage and authentication.

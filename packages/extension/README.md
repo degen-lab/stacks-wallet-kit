@@ -208,8 +208,8 @@ const signedTx = await client.signTransaction(
   unsignedTransaction // StacksTransactionWire
 )
 
-// Check if a wallet backup exists
-const hasBackup = await client.hasBackup()
+// Check if a Google Drive wallet backup exists
+const hasBackup = await client.hasBackup('google')
 if (hasBackup) {
   console.log('Wallet backup exists')
 }
@@ -244,7 +244,7 @@ await client.setEncryptionPassword('my-secure-password')
 const wallet = await client.createWallet()
 
 // 3. When backing up to Google Drive, use the SAME password
-await client.backupWallet('my-secure-password') // Must match encryption password
+await client.backupWallet('my-secure-password', ['google']) // Must match encryption password
 ```
 
 **Note:** After a Chrome extension refresh, the password is not stored in memory. You must call `setEncryptionPassword()` again to decrypt and access stored data.
@@ -318,23 +318,17 @@ await client.setEncryptionPassword('your-encryption-password')
 
 ### Authentication
 
-#### `loginWithGoogle()`
+#### `signIn(provider)`
 
-Sign in with Google and check if a wallet backup exists.
+Sign in with an auth provider. The extension package currently registers Google.
 
 ```typescript
-import { User } from '@degenlab/stacks-wallet-kit-core'
-
-const result: {
-  accessToken: string
-  hasBackup: boolean
-  userData: User | undefined
-} = await client.loginWithGoogle()
+const { user } = await client.signIn('google')
+const hasBackup = await client.hasBackup('google')
 
 // Access the returned values
-console.log('Access Token:', result.accessToken)
-console.log('Has Backup:', result.hasBackup)
-console.log('User Data:', result.userData) // Contains Google user information
+console.log('Access Token:', user.credentials.accessToken)
+console.log('Has Backup:', hasBackup)
 ```
 
 #### `signOut()`
@@ -382,7 +376,7 @@ const newAccount: WalletAccount = await client.createAccount()
 
 ### Backup
 
-#### `backupWallet(password: string)`
+#### `backupWallet(password: string, targets?: AuthProvider[])`
 
 Backup the wallet to Google Drive. **The password must match the encryption password set with `setEncryptionPassword()`.**
 
@@ -391,34 +385,26 @@ Backup the wallet to Google Drive. **The password must match the encryption pass
 await client.setEncryptionPassword('my-password')
 
 // Then backup using the SAME password
-await client.backupWallet('my-password')
+await client.backupWallet('my-password', ['google'])
 ```
 
 **Throws `InvalidPasswordError` if the password doesn't match the encryption password.**
 
-#### `retrieveWallet(password: string)`
+#### `retrieveWalletFromProvider(password: string, provider: AuthProvider)`
 
 Retrieve a wallet from Google Drive backup.
 
 ```typescript
 const { wallet, mnemonic }: { wallet: Wallet; mnemonic: string } =
-  await client.retrieveWallet('wallet-password')
+  await client.retrieveWalletFromProvider('wallet-password', 'google')
 ```
 
-#### `deleteBackup(password: string)`
+#### `deleteBackup(provider?: AuthProvider)`
 
 Delete the wallet backup from Google Drive.
 
 ```typescript
-await client.deleteBackup('wallet-password')
-```
-
-#### `deleteBackupWithoutPassword()`
-
-Delete the wallet backup without requiring a password.
-
-```typescript
-await client.deleteBackupWithoutPassword()
+await client.deleteBackup('google')
 ```
 
 ### Stacks
