@@ -270,7 +270,7 @@ function Playground() {
     const sdk = getSDK()
     if (!sdk) {
       addLog(
-        'loginWithGoogle',
+        'signIn',
         'error',
         'SDK not initialized. Please initialize SDK first.'
       )
@@ -278,10 +278,11 @@ function Playground() {
     }
 
     await executeWithLogging(
-      'loginWithGoogle',
+      'signIn',
       async () => {
-        const result = await sdk.loginWithGoogle()
-        return result
+        const result = await sdk.signIn('google')
+        const hasBackup = await sdk.hasBackup('google')
+        return { user: result.user, hasBackup }
       },
       (result) =>
         `Signed in successfully. Full response: ${JSON.stringify(result, null, 2)}`
@@ -501,7 +502,7 @@ function Playground() {
       async () => {
         await sdk.setEncryptionPassword(walletPassword)
         const { wallet, mnemonic: retrievedMnemonic } =
-          await sdk.retrieveWallet(walletPassword)
+          await sdk.retrieveWalletFromProvider(walletPassword, 'google')
         setSdkAccounts(wallet.accounts)
         setWalletMnemonic(retrievedMnemonic)
         return { wallet, mnemonic: retrievedMnemonic }
@@ -583,8 +584,7 @@ function Playground() {
     await executeWithLogging(
       'backupWallet',
       async () => {
-        await sdk.backupWallet(backupPassword)
-        return { success: true }
+        return sdk.backupWallet(backupPassword, ['google'])
       },
       'Wallet backed up successfully'
     )
@@ -597,32 +597,10 @@ function Playground() {
       return
     }
 
-    if (!backupPassword) {
-      addLog('deleteBackup', 'error', 'Password is required.')
-      return
-    }
-
     await executeWithLogging(
       'deleteBackup',
       async () => {
-        await sdk.deleteBackup(backupPassword)
-        return { success: true }
-      },
-      'Backup deleted successfully'
-    )
-  }
-
-  const handleDeleteBackupWithoutPassword = async () => {
-    const sdk = getSDK()
-    if (!sdk) {
-      addLog('deleteBackupWithoutPassword', 'error', 'SDK not initialized.')
-      return
-    }
-
-    await executeWithLogging(
-      'deleteBackupWithoutPassword',
-      async () => {
-        await sdk.deleteBackupWithoutPassword()
+        await sdk.deleteBackup('google')
         return { success: true }
       },
       'Backup deleted successfully'
@@ -1326,13 +1304,6 @@ function Playground() {
           disabled={loading !== null || !sdkInitialized}
         >
           Delete Backup
-        </button>
-        <button
-          style={buttonStyle}
-          onClick={handleDeleteBackupWithoutPassword}
-          disabled={loading !== null || !sdkInitialized}
-        >
-          Delete Backup (No Password)
         </button>
       </div>
 

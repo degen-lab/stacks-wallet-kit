@@ -13,7 +13,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import { ScrollView, Text, View } from 'react-native'
+import { Platform, ScrollView, Text, View } from 'react-native'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -30,6 +30,25 @@ type LogEntry = {
   type: 'success' | 'error' | 'info'
   message: string
   data?: unknown
+}
+
+function formatError(error: unknown): Record<string, unknown> {
+  if (!error || typeof error !== 'object') return { message: String(error) }
+  const e = error as Record<string, unknown>
+  return {
+    name: e.name,
+    message: e.message,
+    code: e.code,
+    failures: Array.isArray(e.failures)
+      ? e.failures.map((f: unknown) => {
+          const { provider, error: err = {} } = f as {
+            provider: string
+            error: Record<string, unknown>
+          }
+          return { provider, message: err.message, code: err.code }
+        })
+      : undefined,
+  }
 }
 
 function InfoRow({ label, value }: { label: string; value: InfoValue }) {
@@ -196,8 +215,9 @@ export default function SdkPlayground() {
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : String(error)
-        addLog(methodName, 'error', `Error: ${errorMessage}`, error)
-        console.error(`[SDK Playground] Error: ${methodName}`, error)
+        const normalizedError = formatError(error)
+        addLog(methodName, 'error', `Error: ${errorMessage}`, normalizedError)
+        console.error(`[SDK Playground] Error: ${methodName}`, normalizedError)
         throw error
       } finally {
         setLoading(null)
@@ -209,17 +229,37 @@ export default function SdkPlayground() {
   // Authentication methods
   const handleLoginWithGoogle = useCallback(async () => {
     await executeWithLogging(
-      'loginWithGoogle',
+      'signIn',
       async () => {
-        const result = await walletKit.loginWithGoogle()
+        const result = await walletKit.signIn('google')
+        const hasBackup = await walletKit.hasBackup('google')
+        const payload = { user: result.user, hasBackup }
         console.log(
-          '[SDK Playground] Login response:',
-          JSON.stringify(result, null, 2)
+          '[SDK Playground] Sign-in response:',
+          JSON.stringify(payload, null, 2)
         )
-        return result
+        return payload
       },
       (result) =>
-        `Login successful. Full response: ${JSON.stringify(result, null, 2)}`
+        `Sign-in successful. Full response: ${JSON.stringify(result, null, 2)}`
+    )
+  }, [executeWithLogging])
+
+  const handleLoginWithApple = useCallback(async () => {
+    await executeWithLogging(
+      'signInApple',
+      async () => {
+        const result = await walletKit.signIn('apple')
+        const hasBackup = await walletKit.hasBackup('apple')
+        const payload = { user: result.user, hasBackup }
+        console.log(
+          '[SDK Playground] Apple sign-in response:',
+          JSON.stringify(payload, null, 2)
+        )
+        return payload
+      },
+      (result) =>
+        `Apple sign-in successful. Full response: ${JSON.stringify(result, null, 2)}`
     )
   }, [executeWithLogging])
 
@@ -283,7 +323,7 @@ export default function SdkPlayground() {
       return
     }
     await executeWithLogging('backupWallet', async () => {
-      await walletKit.backupWallet(password)
+      return walletKit.backupWallet(password, ['google'])
     })
   }, [password, executeWithLogging, addLog])
 
@@ -293,23 +333,39 @@ export default function SdkPlayground() {
       return
     }
     await executeWithLogging('retrieveWallet', async () => {
-      return await walletKit.retrieveWallet(password)
+      return await walletKit.retrieveWalletFromProvider(password, 'google')
     })
   }, [password, executeWithLogging, addLog])
 
   const handleDeleteBackup = useCallback(async () => {
+    await executeWithLogging('deleteBackup', async () => {
+      await walletKit.deleteBackup('google')
+    })
+  }, [executeWithLogging])
+
+  const handleBackupWalletApple = useCallback(async () => {
     if (!password) {
-      addLog('deleteBackup', 'error', 'Password is required')
+      addLog('backupWalletApple', 'error', 'Password is required')
       return
     }
-    await executeWithLogging('deleteBackup', async () => {
-      await walletKit.deleteBackup(password)
+    await executeWithLogging('backupWalletApple', async () => {
+      return walletKit.backupWallet(password, ['apple'])
     })
   }, [password, executeWithLogging, addLog])
 
-  const handleDeleteBackupWithoutPassword = useCallback(async () => {
-    await executeWithLogging('deleteBackupWithoutPassword', async () => {
-      await walletKit.deleteBackupWithoutPassword()
+  const handleRetrieveWalletApple = useCallback(async () => {
+    if (!password) {
+      addLog('retrieveWalletApple', 'error', 'Password is required')
+      return
+    }
+    await executeWithLogging('retrieveWalletApple', async () => {
+      return await walletKit.retrieveWalletFromProvider(password, 'apple')
+    })
+  }, [password, executeWithLogging, addLog])
+
+  const handleDeleteBackupApple = useCallback(async () => {
+    await executeWithLogging('deleteBackupApple', async () => {
+      await walletKit.deleteBackup('apple')
     })
   }, [executeWithLogging])
 
@@ -810,11 +866,19 @@ export default function SdkPlayground() {
 
       <Section title="Authentication">
         <Button
-          label="Login with Google"
+          label="Sign In with Google"
           onPress={handleLoginWithGoogle}
-          loading={loading === 'loginWithGoogle'}
+          loading={loading === 'signIn'}
           disabled={!!loading}
         />
+        {Platform.OS === 'ios' && (
+          <Button
+            label="Sign In with Apple"
+            onPress={handleLoginWithApple}
+            loading={loading === 'signInApple'}
+            disabled={!!loading}
+          />
+        )}
         <Button
           label="Sign Out"
           variant="outline"
@@ -877,7 +941,7 @@ export default function SdkPlayground() {
         />
       </Section>
 
-      <Section title="Backup & Restore">
+      <Section title="Backup & Restore (Google Drive)">
         <Button
           label="Backup Wallet"
           onPress={handleBackupWallet}
@@ -898,14 +962,32 @@ export default function SdkPlayground() {
           loading={loading === 'deleteBackup'}
           disabled={!!loading}
         />
-        <Button
-          label="Delete Backup (No Password)"
-          variant="destructive"
-          onPress={handleDeleteBackupWithoutPassword}
-          loading={loading === 'deleteBackupWithoutPassword'}
-          disabled={!!loading}
-        />
       </Section>
+
+      {Platform.OS === 'ios' && (
+        <Section title="Backup & Restore (iCloud / CloudKit)">
+          <Button
+            label="Backup Wallet to iCloud"
+            onPress={handleBackupWalletApple}
+            loading={loading === 'backupWalletApple'}
+            disabled={!!loading}
+          />
+          <Button
+            label="Retrieve Wallet from iCloud"
+            variant="outline"
+            onPress={handleRetrieveWalletApple}
+            loading={loading === 'retrieveWalletApple'}
+            disabled={!!loading}
+          />
+          <Button
+            label="Delete iCloud Backup"
+            variant="destructive"
+            onPress={handleDeleteBackupApple}
+            loading={loading === 'deleteBackupApple'}
+            disabled={!!loading}
+          />
+        </Section>
+      )}
 
       <Section title="Wallet Info">
         <Input
