@@ -1,16 +1,15 @@
-import { User } from '../types/backupTypes'
+import { AuthenticatedUser, AuthProvider } from '../types/authTypes'
 
 export interface IAuthentication {
-  signIn(): Promise<{
-    accessToken: string
-    idToken: string
-    user: User | undefined
-  }>
+  readonly provider: AuthProvider
+  signIn(): Promise<AuthenticatedUser>
   signOut(): Promise<void>
-  getAccessToken(oldAccessToken: string): Promise<string>
-  signInSilently(): Promise<{
-    accessToken: string
-    idToken: string
-    user: User | undefined
-  }>
+}
+
+export interface ISilentSignInCapable {
+  signInSilently(): Promise<AuthenticatedUser>
+}
+
+export interface ITokenRefreshCapable {
+  getAccessToken(oldAccessToken?: string): Promise<string>
 }

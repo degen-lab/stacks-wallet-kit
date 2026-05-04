@@ -1,0 +1,11 @@
+{
+  "platforms": [
+    "apple"
+  ],
+  "apple": {
+    "modules": [
+      "ExpoCloudKitBackupModule"
+    ],
+    "podspecPath": "ExpoCloudKitBackup.podspec"
+  }
+}

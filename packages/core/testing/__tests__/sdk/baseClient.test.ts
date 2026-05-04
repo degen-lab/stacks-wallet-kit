@@ -1,9 +1,14 @@
-import { AuthenticationCancelledError, AuthError, User } from '../../../src'
+import {
+  AuthenticatedUser,
+  AuthenticationCancelledError,
+  AuthError,
+} from '../../../src'
 import { WalletNotStoredError } from '../../../src/shared/errors/SDKError'
 import { NetworkType } from '../../../src/shared'
 import { BaseClient } from '../../../src/sdk/baseClient'
 import {
   authenticationManager,
+  accessTokenBackupProvider,
   backupManager,
   encryptionManager,
   storageManager,
@@ -20,8 +25,8 @@ import {
 } from '../../../src/shared/errors/stackingError'
 import {
   AccessTokenError,
-  BackupAlreadyExistsError,
   BackupError,
+  BackupWriteFailedError,
   BackupNotFoundError,
 } from '../../../src/shared/errors/backupErrors'
 import { Wallet } from '../../../src/shared'
@@ -40,13 +45,14 @@ import { ClarityValue } from '@stacks/transactions'
 
 describe('BaseClient', () => {
   const baseClient = new BaseClient(
-    authenticationManager,
+    new Map([['google', authenticationManager]]),
     backupManager,
     walletManager,
     encryptionManager,
     storageManager,
     stacksClient,
-    stackingClient
+    stackingClient,
+    new Map([['google', accessTokenBackupProvider]])
   )
 
   async function createMockWallet(): Promise<Wallet> {
@@ -62,6 +68,9 @@ describe('BaseClient', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
+    jest
+      .spyOn(backupManager, 'getProvider')
+      .mockReturnValue(accessTokenBackupProvider)
     // Reset mock implementations to prevent persistence across tests
     jest.spyOn(storageManager, 'getItem').mockReset()
     jest.spyOn(stacksClient, 'getPoxData').mockReset()
@@ -75,25 +84,22 @@ describe('BaseClient', () => {
 
   describe('loginWithGoogle', () => {
     it('should login with google successfully', async () => {
-      const mockUser: User = {
-        user: {
-          id: 'mock-user-id',
-          email: 'mock@example.com',
-          name: 'Mock User',
-          photo: null,
-          familyName: null,
-          givenName: null,
+      const mockUser: AuthenticatedUser = {
+        provider: 'google',
+        providerUserId: 'mock-user-id',
+        email: 'mock@example.com',
+        displayName: 'Mock User',
+        photoUri: null,
+        credentials: {
+          accessToken: 'mock-access-token',
+          idToken: 'mock-id-token',
+          serverAuthCode: undefined,
         },
-        scopes: [],
-        idToken: null,
-        serverAuthCode: null,
       }
-      jest.spyOn(authenticationManager, 'signIn').mockResolvedValueOnce({
-        accessToken: 'mock-access-token',
-        idToken: 'mock-id-token',
-        user: mockUser,
-      })
-      jest.spyOn(backupManager, 'hasWalletBackup').mockResolvedValueOnce(true)
+      jest
+        .spyOn(authenticationManager, 'signIn')
+        .mockResolvedValueOnce(mockUser)
+      jest.spyOn(backupManager, 'hasBackup').mockResolvedValueOnce(true)
       const result = await baseClient.loginWithGoogle()
       expect(result).toEqual({
         accessToken: 'mock-access-token',
@@ -115,29 +121,26 @@ describe('BaseClient', () => {
     })
 
     it('should throw an error if the backup fails', async () => {
-      const mockUser: User = {
-        user: {
-          id: 'mock-user-id',
-          email: 'mock@example.com',
-          name: 'Mock User',
-          photo: null,
-          familyName: null,
-          givenName: null,
+      const mockUser: AuthenticatedUser = {
+        provider: 'google',
+        providerUserId: 'mock-user-id',
+        email: 'mock@example.com',
+        displayName: 'Mock User',
+        photoUri: null,
+        credentials: {
+          accessToken: 'mock-access-token',
+          idToken: 'mock-id-token',
+          serverAuthCode: undefined,
         },
-        scopes: [],
-        idToken: null,
-        serverAuthCode: null,
       }
-      jest.spyOn(authenticationManager, 'signIn').mockResolvedValueOnce({
-        accessToken: 'mock-access-token',
-        idToken: 'mock-id-token',
-        user: mockUser,
-      })
       jest
-        .spyOn(backupManager, 'hasWalletBackup')
+        .spyOn(authenticationManager, 'signIn')
+        .mockResolvedValueOnce(mockUser)
+      jest
+        .spyOn(backupManager, 'hasBackup')
         .mockRejectedValueOnce(new BackupError('Backup failed', 'BACKUP_ERROR'))
       await expect(baseClient.loginWithGoogle()).rejects.toThrow(BackupError)
-      expect(backupManager.hasWalletBackup).toHaveBeenCalled()
+      expect(backupManager.hasBackup).toHaveBeenCalledWith('google')
     })
 
     it('should throw an SDK error if an unknown error occurs', async () => {
@@ -343,13 +346,14 @@ describe('BaseClient', () => {
 
       // Create a new SDK facade with real walletManager
       const realBaseSDKFacade = new BaseClient(
-        authenticationManager,
+        new Map([['google', authenticationManager]]),
         backupManager,
         realWalletManager,
         encryptionManager,
         storageManager,
         stacksClient,
-        stackingClient
+        stackingClient,
+        new Map([['google', accessTokenBackupProvider]])
       )
 
       jest.spyOn(storageManager, 'setItem').mockResolvedValue(undefined)
@@ -415,9 +419,15 @@ describe('BaseClient', () => {
       jest
         .spyOn(helpers, 'getFingerPrintFromMnemonic')
         .mockResolvedValueOnce('test-fingerprint')
-      jest.spyOn(backupManager, 'saveBackup').mockResolvedValueOnce(undefined)
+      jest.spyOn(backupManager, 'saveToTargets').mockResolvedValueOnce({
+        succeeded: ['google'],
+        failed: [],
+      })
 
-      await baseClient.backupWallet('mock-password')
+      await expect(baseClient.backupWallet('mock-password')).resolves.toEqual({
+        succeeded: ['google'],
+        failed: [],
+      })
 
       expect(storageManager.getItem).toHaveBeenCalledWith('wallet')
       expect(storageManager.getItem).toHaveBeenCalledWith('mnemonic')
@@ -427,9 +437,9 @@ describe('BaseClient', () => {
         mockMnemonic
       )
       expect(getFingerPrintFromMnemonic).toHaveBeenCalledWith(mockMnemonic)
-      expect(backupManager.saveBackup).toHaveBeenCalledWith(
-        'test-fingerprint',
-        expect.objectContaining(mockEnvelope)
+      expect(backupManager.saveToTargets).toHaveBeenCalledWith(
+        expect.objectContaining(mockEnvelope),
+        ['google']
       )
     })
     it('should throw an error if the wallet is not found in storage', async () => {
@@ -494,10 +504,17 @@ describe('BaseClient', () => {
         .spyOn(helpers, 'getFingerPrintFromMnemonic')
         .mockResolvedValueOnce('test-fingerprint')
       jest
-        .spyOn(backupManager, 'saveBackup')
-        .mockRejectedValueOnce(new BackupAlreadyExistsError())
+        .spyOn(backupManager, 'saveToTargets')
+        .mockRejectedValueOnce(
+          new BackupWriteFailedError([
+            {
+              provider: 'google',
+              error: new BackupError('Backup failed', 'BACKUP_ERROR'),
+            },
+          ])
+        )
       await expect(baseClient.backupWallet('test-password')).rejects.toThrow(
-        BackupAlreadyExistsError
+        BackupWriteFailedError
       )
     })
 
@@ -562,12 +579,16 @@ describe('BaseClient', () => {
         .spyOn(helpers, 'getFingerPrintFromMnemonic')
         .mockResolvedValue('test-fingerprint')
       jest
-        .spyOn(backupManager, 'saveBackup')
-        .mockRejectedValueOnce(new AccessTokenError())
-        .mockResolvedValueOnce(undefined)
+        .spyOn(backupManager, 'saveToTargets')
+        .mockRejectedValueOnce(
+          new BackupWriteFailedError([
+            { provider: 'google', error: new AccessTokenError() },
+          ])
+        )
+        .mockResolvedValueOnce({ succeeded: ['google'], failed: [] })
 
       jest
-        .spyOn(backupManager, 'getAccessTokenFromClient')
+        .spyOn(accessTokenBackupProvider, 'getAccessToken')
         .mockReturnValueOnce('old-token')
       jest
         .spyOn(authenticationManager, 'getAccessToken')
@@ -575,14 +596,14 @@ describe('BaseClient', () => {
 
       await baseClient.backupWallet('test-password')
 
-      expect(backupManager.getAccessTokenFromClient).toHaveBeenCalled()
+      expect(accessTokenBackupProvider.getAccessToken).toHaveBeenCalled()
       expect(authenticationManager.getAccessToken).toHaveBeenCalledWith(
         'old-token'
       )
-      expect(backupManager.updateAccessToken).toHaveBeenCalledWith(
+      expect(accessTokenBackupProvider.setAccessToken).toHaveBeenCalledWith(
         'new-refreshed-token'
       )
-      expect(backupManager.saveBackup).toHaveBeenCalledTimes(2)
+      expect(backupManager.saveToTargets).toHaveBeenCalledTimes(2)
     })
 
     it('should throw a SDK error if the token refresh fails', async () => {
@@ -609,11 +630,15 @@ describe('BaseClient', () => {
         .spyOn(helpers, 'getFingerPrintFromMnemonic')
         .mockResolvedValue('test-fingerprint')
       jest
-        .spyOn(backupManager, 'saveBackup')
-        .mockRejectedValueOnce(new AccessTokenError())
+        .spyOn(backupManager, 'saveToTargets')
+        .mockRejectedValueOnce(
+          new BackupWriteFailedError([
+            { provider: 'google', error: new AccessTokenError() },
+          ])
+        )
 
       jest
-        .spyOn(backupManager, 'getAccessTokenFromClient')
+        .spyOn(accessTokenBackupProvider, 'getAccessToken')
         .mockImplementationOnce(() => {
           throw new Error('Token refresh failed')
         })
@@ -622,8 +647,8 @@ describe('BaseClient', () => {
         'Token refresh failed'
       )
 
-      expect(backupManager.getAccessTokenFromClient).toHaveBeenCalled()
-      expect(backupManager.saveBackup).toHaveBeenCalledTimes(1)
+      expect(accessTokenBackupProvider.getAccessToken).toHaveBeenCalled()
+      expect(backupManager.saveToTargets).toHaveBeenCalledTimes(1)
       expect(authenticationManager.getAccessToken).not.toHaveBeenCalled()
     })
   })
@@ -651,7 +676,7 @@ describe('BaseClient', () => {
         },
       }
       jest
-        .spyOn(backupManager, 'retrieveBackup')
+        .spyOn(backupManager, 'retrieveFrom')
         .mockResolvedValueOnce(mockEnvelope)
       jest.spyOn(storageManager, 'setItem').mockResolvedValueOnce(undefined)
       const mockWallet = await createMockWallet()
@@ -672,7 +697,7 @@ describe('BaseClient', () => {
 
     it('should throw an error a backup error if the backup fails', async () => {
       jest
-        .spyOn(backupManager, 'retrieveBackup')
+        .spyOn(backupManager, 'retrieveFrom')
         .mockRejectedValueOnce(new BackupNotFoundError())
       await expect(baseClient.retrieveWallet('test-password')).rejects.toThrow(
         BackupNotFoundError
@@ -701,7 +726,7 @@ describe('BaseClient', () => {
         },
       }
       jest
-        .spyOn(backupManager, 'retrieveBackup')
+        .spyOn(backupManager, 'retrieveFrom')
         .mockResolvedValueOnce(mockEnvelope)
       jest
         .spyOn(encryptionManager, 'decryptWallet')
@@ -713,7 +738,7 @@ describe('BaseClient', () => {
 
     it('should throw an error if the unknown error occurs', async () => {
       jest
-        .spyOn(backupManager, 'retrieveBackup')
+        .spyOn(backupManager, 'retrieveFrom')
         .mockRejectedValueOnce(new Error('Unknown error'))
       await expect(baseClient.retrieveWallet('test-password')).rejects.toThrow(
         'Unknown error'
@@ -722,11 +747,11 @@ describe('BaseClient', () => {
 
     it('should refresh the token and retry if got an AccessTokenError (401): Unauthorized', async () => {
       jest
-        .spyOn(backupManager, 'retrieveBackup')
+        .spyOn(backupManager, 'retrieveFrom')
         .mockRejectedValueOnce(new AccessTokenError())
 
       jest
-        .spyOn(backupManager, 'getAccessTokenFromClient')
+        .spyOn(accessTokenBackupProvider, 'getAccessToken')
         .mockReturnValueOnce('old-token')
       jest
         .spyOn(authenticationManager, 'getAccessToken')
@@ -753,7 +778,7 @@ describe('BaseClient', () => {
         },
       }
       jest
-        .spyOn(backupManager, 'retrieveBackup')
+        .spyOn(backupManager, 'retrieveFrom')
         .mockResolvedValueOnce(mockEnvelope)
       const mockWallet = await createMockWallet()
       jest.spyOn(encryptionManager, 'decryptWallet').mockResolvedValueOnce({
@@ -766,22 +791,22 @@ describe('BaseClient', () => {
         wallet: mockWallet,
         mnemonic: 'test-mnemonic',
       })
-      expect(backupManager.getAccessTokenFromClient).toHaveBeenCalled()
+      expect(accessTokenBackupProvider.getAccessToken).toHaveBeenCalled()
       expect(authenticationManager.getAccessToken).toHaveBeenCalledWith(
         'old-token'
       )
-      expect(backupManager.updateAccessToken).toHaveBeenCalledWith(
+      expect(accessTokenBackupProvider.setAccessToken).toHaveBeenCalledWith(
         'new-refreshed-token'
       )
-      expect(backupManager.retrieveBackup).toHaveBeenCalledTimes(2)
+      expect(backupManager.retrieveFrom).toHaveBeenCalledTimes(2)
     })
 
     it('should throw a SDK error if the token refresh fails', async () => {
       jest
-        .spyOn(backupManager, 'retrieveBackup')
+        .spyOn(backupManager, 'retrieveFrom')
         .mockRejectedValueOnce(new AccessTokenError())
       jest
-        .spyOn(backupManager, 'getAccessTokenFromClient')
+        .spyOn(accessTokenBackupProvider, 'getAccessToken')
         .mockImplementationOnce(() => {
           throw new Error('Token refresh failed')
         })
@@ -793,125 +818,81 @@ describe('BaseClient', () => {
 
   describe('deleteBackup', () => {
     it('should delete a backup successfully', async () => {
-      const mockMnemonic = 'test mnemonic phrase'
-      jest.spyOn(storageManager, 'getItem').mockResolvedValueOnce(mockMnemonic)
-      jest
-        .spyOn(helpers, 'getFingerPrintFromMnemonic')
-        .mockResolvedValueOnce('test-fingerprint')
-      jest.spyOn(backupManager, 'deleteBackup').mockResolvedValueOnce(undefined)
-      await baseClient.deleteBackup('test-password')
-      expect(storageManager.getItem).toHaveBeenCalledWith('mnemonic')
-      expect(getFingerPrintFromMnemonic).toHaveBeenCalledWith(mockMnemonic)
-      expect(backupManager.deleteBackup).toHaveBeenCalledWith(
-        'test-fingerprint'
-      )
-    })
+      jest.spyOn(backupManager, 'deleteFrom').mockResolvedValueOnce(undefined)
 
-    it('should throw an error if the mnemonic is not found in storage', async () => {
-      jest.spyOn(storageManager, 'getItem').mockResolvedValueOnce(null)
-      const error = await baseClient
-        .deleteBackup('test-password')
-        .catch((e) => e)
-      expect(error).toBeInstanceOf(WalletNotStoredError)
+      await baseClient.deleteBackup()
+
+      expect(backupManager.deleteFrom).toHaveBeenCalledWith('google')
     })
 
     it('should throw a backup error if the backup fails', async () => {
-      const mockMnemonic = 'test mnemonic phrase'
-      jest.spyOn(storageManager, 'getItem').mockResolvedValueOnce(mockMnemonic)
       jest
-        .spyOn(helpers, 'getFingerPrintFromMnemonic')
-        .mockResolvedValueOnce('test-fingerprint')
-      jest
-        .spyOn(backupManager, 'deleteBackup')
+        .spyOn(backupManager, 'deleteFrom')
         .mockRejectedValueOnce(new BackupNotFoundError())
-      await expect(baseClient.deleteBackup('test-password')).rejects.toThrow(
+      await expect(baseClient.deleteBackup()).rejects.toThrow(
         BackupNotFoundError
       )
     })
 
     it('should throw a SDK error if an unknown error occurs', async () => {
-      const mockMnemonic = 'test mnemonic phrase'
-      jest.spyOn(storageManager, 'getItem').mockResolvedValueOnce(mockMnemonic)
       jest
-        .spyOn(helpers, 'getFingerPrintFromMnemonic')
+        .spyOn(backupManager, 'deleteFrom')
         .mockRejectedValueOnce(new Error('Unknown error'))
-      await expect(baseClient.deleteBackup('test-password')).rejects.toThrow(
-        Error
-      )
+      await expect(baseClient.deleteBackup()).rejects.toThrow(Error)
     })
 
     it('should refresh the token and retry if got an AccessTokenError (401): Unauthorized', async () => {
-      const mockMnemonic = 'test mnemonic phrase'
       jest
-        .spyOn(storageManager, 'getItem')
-        .mockResolvedValueOnce(mockMnemonic)
-        .mockResolvedValueOnce(mockMnemonic)
-      jest
-        .spyOn(helpers, 'getFingerPrintFromMnemonic')
-        .mockResolvedValue('test-fingerprint')
-      jest
-        .spyOn(backupManager, 'deleteBackup')
+        .spyOn(backupManager, 'deleteFrom')
         .mockRejectedValueOnce(new AccessTokenError())
+        .mockResolvedValueOnce(undefined)
 
       jest
-        .spyOn(backupManager, 'getAccessTokenFromClient')
+        .spyOn(accessTokenBackupProvider, 'getAccessToken')
         .mockReturnValueOnce('old-token')
       jest
         .spyOn(authenticationManager, 'getAccessToken')
         .mockResolvedValueOnce('new-refreshed-token')
 
-      jest.spyOn(backupManager, 'deleteBackup').mockResolvedValueOnce(undefined)
+      await baseClient.deleteBackup()
 
-      await baseClient.deleteBackup('test-password')
-
-      expect(backupManager.getAccessTokenFromClient).toHaveBeenCalled()
+      expect(accessTokenBackupProvider.getAccessToken).toHaveBeenCalled()
       expect(authenticationManager.getAccessToken).toHaveBeenCalledWith(
         'old-token'
       )
-      expect(backupManager.updateAccessToken).toHaveBeenCalledWith(
+      expect(accessTokenBackupProvider.setAccessToken).toHaveBeenCalledWith(
         'new-refreshed-token'
       )
-      expect(backupManager.deleteBackup).toHaveBeenCalledTimes(2)
-      expect(backupManager.deleteBackup).toHaveBeenCalledWith(
-        'test-fingerprint'
-      )
+      expect(backupManager.deleteFrom).toHaveBeenCalledTimes(2)
+      expect(backupManager.deleteFrom).toHaveBeenCalledWith('google')
     })
 
     it('should throw a SDK error if the token refresh fails', async () => {
-      const mockMnemonic = 'test mnemonic phrase'
-      jest.spyOn(storageManager, 'getItem').mockResolvedValueOnce(mockMnemonic)
       jest
-        .spyOn(helpers, 'getFingerPrintFromMnemonic')
-        .mockResolvedValue('test-fingerprint')
-      jest
-        .spyOn(backupManager, 'deleteBackup')
+        .spyOn(backupManager, 'deleteFrom')
         .mockRejectedValueOnce(new AccessTokenError())
 
       jest
-        .spyOn(backupManager, 'getAccessTokenFromClient')
+        .spyOn(accessTokenBackupProvider, 'getAccessToken')
         .mockImplementationOnce(() => {
           throw new Error('Token refresh failed')
         })
 
-      await expect(baseClient.deleteBackup('test-password')).rejects.toThrow(
-        Error
-      )
+      await expect(baseClient.deleteBackup()).rejects.toThrow(Error)
 
-      expect(backupManager.getAccessTokenFromClient).toHaveBeenCalled()
-      expect(backupManager.deleteBackup).toHaveBeenCalledTimes(1)
+      expect(accessTokenBackupProvider.getAccessToken).toHaveBeenCalled()
+      expect(backupManager.deleteFrom).toHaveBeenCalledTimes(1)
       expect(authenticationManager.getAccessToken).not.toHaveBeenCalled()
     })
   })
 
   describe('deleteBackupWithoutPassword', () => {
     it('should delete the existing backup without decrypting local wallet', async () => {
-      jest
-        .spyOn(backupManager, 'deleteExistingBackup')
-        .mockResolvedValueOnce(undefined)
+      jest.spyOn(backupManager, 'deleteFrom').mockResolvedValueOnce(undefined)
 
       await baseClient.deleteBackupWithoutPassword()
 
-      expect(backupManager.deleteExistingBackup).toHaveBeenCalled()
+      expect(backupManager.deleteFrom).toHaveBeenCalledWith('google')
     })
   })
 

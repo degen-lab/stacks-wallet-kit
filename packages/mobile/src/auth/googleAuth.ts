@@ -1,13 +1,16 @@
 import {
+  AuthProvider,
+  AuthenticatedUser,
   AuthenticationAlreadyInProgressError,
   AuthenticationCancelledError,
   AuthError,
   IAuthentication,
+  ISilentSignInCapable,
+  ITokenRefreshCapable,
   PlayServicesNotAvailableError,
   SignInRequiredError,
   SignOutError,
   TokenRefreshError,
-  User,
 } from '@degenlab/stacks-wallet-kit-core'
 import {
   GoogleSignin,
@@ -15,7 +18,26 @@ import {
   statusCodes,
 } from '@react-native-google-signin/google-signin'
 import { SCOPES } from '../helper/constants'
-export class GoogleAuth implements IAuthentication {
+
+type GoogleUserData = {
+  user: {
+    id: string
+    email: string
+    name: string | null
+    photo: string | null
+    familyName: string | null
+    givenName: string | null
+  }
+  scopes: string[]
+  idToken: string | null
+  serverAuthCode: string | null
+}
+
+export class GoogleAuth
+  implements IAuthentication, ISilentSignInCapable, ITokenRefreshCapable
+{
+  readonly provider: AuthProvider = 'google'
+
   constructor(webClientId: string, iosClientId: string, scopes?: string[]) {
     const allScopes = scopes ? [...scopes, ...SCOPES] : SCOPES
 
@@ -28,22 +50,18 @@ export class GoogleAuth implements IAuthentication {
     })
   }
 
-  async signInSilently(): Promise<{
-    accessToken: string
-    idToken: string
-    user: User | undefined
-  }> {
+  async signInSilently(): Promise<AuthenticatedUser> {
     try {
       const signInResponse = await GoogleSignin.signInSilently()
       if (!signInResponse.data) {
         throw new SignInRequiredError()
       }
       const { accessToken, idToken } = await GoogleSignin.getTokens()
-      return {
+      return this.toAuthenticatedUser(
+        signInResponse.data as GoogleUserData,
         accessToken,
-        idToken,
-        user: signInResponse.data,
-      }
+        idToken
+      )
     } catch (error) {
       if (error instanceof SignInRequiredError) {
         throw error
@@ -72,11 +90,7 @@ export class GoogleAuth implements IAuthentication {
     }
   }
 
-  async signIn(): Promise<{
-    accessToken: string
-    idToken: string
-    user: User | undefined
-  }> {
+  async signIn(): Promise<AuthenticatedUser> {
     try {
       await GoogleSignin.hasPlayServices()
       const signInResponse = await GoogleSignin.signIn()
@@ -84,17 +98,16 @@ export class GoogleAuth implements IAuthentication {
         throw new AuthError('User not found', 'USER_NOT_FOUND')
       }
       const { accessToken, idToken } = await GoogleSignin.getTokens()
-      return {
+      return this.toAuthenticatedUser(
+        signInResponse.data as GoogleUserData,
         accessToken,
-        idToken,
-        user: signInResponse.data,
-      }
+        idToken
+      )
     } catch (error) {
       if (isErrorWithCode(error)) {
         switch (error.code) {
           case statusCodes.IN_PROGRESS:
             throw new AuthenticationAlreadyInProgressError()
-
           case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
             throw new PlayServicesNotAvailableError()
           case statusCodes.SIGN_IN_CANCELLED:
@@ -119,7 +132,7 @@ export class GoogleAuth implements IAuthentication {
     }
   }
 
-  async getAccessToken(oldAccessToken: string): Promise<string> {
+  async getAccessToken(oldAccessToken = ''): Promise<string> {
     try {
       if (oldAccessToken !== '') {
         await GoogleSignin.clearCachedAccessToken(oldAccessToken)
@@ -128,6 +141,25 @@ export class GoogleAuth implements IAuthentication {
       return accessToken
     } catch {
       throw new TokenRefreshError()
+    }
+  }
+
+  private toAuthenticatedUser(
+    data: GoogleUserData,
+    accessToken: string,
+    idToken: string
+  ): AuthenticatedUser {
+    return {
+      provider: 'google',
+      providerUserId: data.user.id,
+      email: data.user.email,
+      displayName: data.user.name,
+      photoUri: data.user.photo,
+      credentials: {
+        accessToken,
+        idToken,
+        serverAuthCode: data.serverAuthCode ?? undefined,
+      },
     }
   }
 }

@@ -1,12 +1,19 @@
 import {
+  AuthProvider,
+  AuthenticatedUser,
   AuthError,
   IAuthentication,
+  ISilentSignInCapable,
   IStorageManager,
-  User,
+  ITokenRefreshCapable,
 } from '@degenlab/stacks-wallet-kit-core'
 import { IGoogleSignInClient } from '../interfaces/IGoogleSignInClient'
 
-export class AuthenticationManager implements IAuthentication {
+export class AuthenticationManager
+  implements IAuthentication, ISilentSignInCapable, ITokenRefreshCapable
+{
+  readonly provider: AuthProvider = 'google'
+
   constructor(
     private googleSignInClient: IGoogleSignInClient,
     private googleClientId: string,
@@ -16,11 +23,7 @@ export class AuthenticationManager implements IAuthentication {
     private storageManager: IStorageManager
   ) {}
 
-  async signIn(): Promise<{
-    accessToken: string
-    idToken: string
-    user: User | undefined
-  }> {
+  async signIn(): Promise<AuthenticatedUser> {
     const { accessToken, refreshToken, idToken } =
       await this.googleSignInClient.loginWithGoogle(
         this.googleClientId,
@@ -29,47 +32,52 @@ export class AuthenticationManager implements IAuthentication {
         this.scopes
       )
     await this.storageManager.setItem('refreshToken', refreshToken)
-    return { accessToken, idToken: idToken || '', user: undefined }
+    return {
+      provider: 'google',
+      providerUserId: '',
+      email: null,
+      displayName: null,
+      photoUri: null,
+      credentials: { accessToken, idToken: idToken || '' },
+    }
   }
 
-  /**
-   * Sign out from the wallet
-   * Note: Not needed for the moment - logout is handled by the storage manager and the high level client module
-   */
   async signOut(): Promise<void> {
-    // Call the Google sign-in client's logout to revoke tokens
-    // await this.googleSignInClient.logOut()
-    // Clear the stored refresh token from storage
-    // await this.storageManager.removeItem('refreshToken')
+    return Promise.resolve()
   }
 
-  async getAccessToken(refreshToken: string): Promise<string> {
-    return await this.googleSignInClient.getAccessToken(
+  async getAccessToken(refreshToken?: string): Promise<string> {
+    const token =
+      refreshToken ??
+      (await this.storageManager.getItem<string>('refreshToken'))
+    if (!token) {
+      throw new AuthError('Refresh token not found', 'REFRESH_TOKEN_REQUIRED')
+    }
+    return this.googleSignInClient.getAccessToken(
       this.googleClientId,
       this.googleClientSecret,
-      refreshToken
+      token
     )
   }
 
-  async signInSilently(): Promise<{
-    accessToken: string
-    idToken: string
-    user: User | undefined
-  }> {
+  async signInSilently(): Promise<AuthenticatedUser> {
     const storedRefreshToken =
       await this.storageManager.getItem<string>('refreshToken')
-
     if (!storedRefreshToken) {
       throw new AuthError('Refresh token is required', 'REFRESH_TOKEN_REQUIRED')
     }
+    const accessToken = await this.googleSignInClient.getAccessToken(
+      this.googleClientId,
+      this.googleClientSecret,
+      storedRefreshToken
+    )
     return {
-      accessToken: await this.googleSignInClient.getAccessToken(
-        this.googleClientId,
-        this.googleClientSecret,
-        storedRefreshToken
-      ),
-      idToken: '',
-      user: undefined,
+      provider: 'google',
+      providerUserId: '',
+      email: null,
+      displayName: null,
+      photoUri: null,
+      credentials: { accessToken },
     }
   }
 }

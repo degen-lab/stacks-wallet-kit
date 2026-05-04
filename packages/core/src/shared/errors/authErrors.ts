@@ -10,11 +10,34 @@ export class AuthError extends Error {
   }
 }
 
+export class AuthProviderNotRegisteredError extends AuthError {
+  constructor(
+    message = 'Authentication provider is not registered',
+    code = 'AUTH_PROVIDER_NOT_REGISTERED'
+  ) {
+    super(message, code)
+    this.name = 'AuthProviderNotRegisteredError'
+    Object.setPrototypeOf(this, AuthProviderNotRegisteredError.prototype)
+  }
+}
+
 export class AuthenticationCancelledError extends AuthError {
   constructor(message = 'User cancelled the sign-in') {
     super(message, 'AUTHENTICATION_CANCELLED')
     this.name = 'AuthenticationCancelledError'
     Object.setPrototypeOf(this, AuthenticationCancelledError.prototype)
+  }
+}
+
+export class AppleAuthError extends AuthError {
+  constructor(
+    message = 'Apple sign-in failed',
+    code = 'APPLE_AUTH_ERROR',
+    originalError?: unknown
+  ) {
+    super(message, code, originalError)
+    this.name = 'AppleAuthError'
+    Object.setPrototypeOf(this, AppleAuthError.prototype)
   }
 }
 

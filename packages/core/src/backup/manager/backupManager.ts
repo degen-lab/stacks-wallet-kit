@@ -1,91 +1,84 @@
 import {
+  AuthProvider,
+  BackupWriteResult,
   IBackupManager,
-  IGoogleBackupClient,
+  IBackupProvider,
   WalletEnvelope,
 } from '../../shared'
 import {
-  BackupAlreadyExistsError,
-  BackupNotFoundError,
+  BackupProviderNotRegisteredError,
+  BackupWriteFailedError,
 } from '../../shared/errors/backupErrors'
 
 export class BackupManager implements IBackupManager {
-  private backupClient: IGoogleBackupClient
+  private providers = new Map<AuthProvider, IBackupProvider>()
 
-  constructor(backupClient: IGoogleBackupClient) {
-    this.backupClient = backupClient
+  registerProvider(provider: IBackupProvider): void {
+    this.providers.set(provider.provider, provider)
   }
 
-  getAccessTokenFromClient(): string {
-    return this.backupClient.getAccessToken()
+  getProvider(provider: AuthProvider): IBackupProvider | undefined {
+    return this.providers.get(provider)
   }
 
-  async hasWalletBackup(): Promise<boolean> {
-    const result = await this.backupClient.findAll()
-    const data = result.find(
-      (value) => value.appProperties?.walletName === 'Google-Wallet'
+  async listAvailable(): Promise<AuthProvider[]> {
+    const available: AuthProvider[] = []
+    for (const [provider, backupProvider] of this.providers) {
+      if (await backupProvider.isAvailable()) {
+        available.push(provider)
+      }
+    }
+    return available
+  }
+
+  async hasBackup(provider: AuthProvider): Promise<boolean> {
+    return this.requireProvider(provider).hasBackup()
+  }
+
+  async saveToTargets(
+    envelope: WalletEnvelope,
+    targets: AuthProvider[]
+  ): Promise<BackupWriteResult> {
+    const writes = await Promise.all(
+      targets.map(async (provider) => {
+        try {
+          await this.requireProvider(provider).save(envelope)
+          return { provider, error: null as unknown }
+        } catch (error) {
+          return { provider, error }
+        }
+      })
     )
-    if (data?.id) {
-      return true
-    }
-    return false
-  }
 
-  updateAccessToken(newToken: string): void {
-    this.backupClient.setAccessToken(newToken)
-  }
+    const succeeded = writes
+      .filter((w) => w.error === null)
+      .map((w) => w.provider)
+    const failed = writes
+      .filter((w) => w.error !== null)
+      .map((w) => ({ provider: w.provider, error: w.error }))
 
-  async saveBackup(name: string, envelope: WalletEnvelope): Promise<void> {
-    const result = await this.backupClient.findAll()
-
-    const data = result.find(
-      (value) => value.appProperties?.walletName === 'Google-Wallet'
-    )
-    if (data?.id) {
-      throw new BackupAlreadyExistsError()
+    if (succeeded.length === 0) {
+      throw new BackupWriteFailedError(failed)
     }
 
-    await this.backupClient.upload(name, envelope, {
-      walletName: 'Google-Wallet',
-    })
+    return { succeeded, failed }
   }
 
-  async deleteBackup(backupId: string): Promise<void> {
-    const result = await this.backupClient.findOne(backupId)
-    if (!result?.id) {
-      throw new BackupNotFoundError()
-    }
-    await this.backupClient.delete(result.id)
+  async retrieveFrom(provider: AuthProvider): Promise<WalletEnvelope> {
+    return this.requireProvider(provider).retrieve()
   }
 
-  async deleteExistingBackup(): Promise<void> {
-    const result = await this.backupClient.findAll()
-    const data = result.find(
-      (value) => value.appProperties?.walletName === 'Google-Wallet'
-    )
-    if (!data?.id) {
-      throw new BackupNotFoundError()
-    }
-    await this.backupClient.delete(data.id)
+  async deleteFrom(provider: AuthProvider): Promise<void> {
+    await this.requireProvider(provider).delete()
   }
 
-  async getBackup(backupId: string): Promise<WalletEnvelope> {
-    const result = await this.backupClient.findOne(backupId)
-    if (!result?.id) {
-      throw new BackupNotFoundError()
+  private requireProvider(provider: AuthProvider): IBackupProvider {
+    const backupProvider = this.providers.get(provider)
+    if (!backupProvider) {
+      throw new BackupProviderNotRegisteredError(
+        `Backup provider "${provider}" is not registered`
+      )
     }
-    const envelope = await this.backupClient.download(result.id)
-    return envelope
-  }
-
-  async retrieveBackup(): Promise<WalletEnvelope> {
-    const result = await this.backupClient.findAll()
-    const data = result.find(
-      (value) => value.appProperties?.walletName === 'Google-Wallet'
-    )
-    if (!data?.id) {
-      throw new BackupNotFoundError()
-    }
-    const envelope = await this.backupClient.download(data.id)
-    return envelope
+    return backupProvider
   }
 }

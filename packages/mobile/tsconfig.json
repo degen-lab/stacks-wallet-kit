@@ -12,7 +12,7 @@
       ]
     }
   },
-  "include": ["src", "testing"],
+  "include": ["src", "plugin", "testing"],
   "exclude": ["node_modules", "dist"],
   "references": [{ "path": "../core" }]
 }

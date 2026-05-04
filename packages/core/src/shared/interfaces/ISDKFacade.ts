@@ -4,25 +4,61 @@ import {
   StacksTransactionWire,
 } from '@stacks/transactions'
 import { StackingPool } from '../../stacks/utils/types'
-import { NetworkType, User, Wallet, WalletAccount } from '../types/backupTypes'
+import {
+  AuthProvider,
+  AuthenticatedUser,
+  GoogleAuthenticatedUser,
+} from '../types/authTypes'
+import {
+  BackupWriteResult,
+  NetworkType,
+  Wallet,
+  WalletAccount,
+} from '../types/backupTypes'
 
 export interface ISDKFacade {
+  signIn(provider: AuthProvider): Promise<{ user: AuthenticatedUser }>
+  signOut(): Promise<void>
+
+  createWallet(passphrase?: string): Promise<Wallet>
+  storeExistingWallet(mnemonic: string, passphrase?: string): Promise<Wallet>
+  createAccount(): Promise<WalletAccount>
+  getWalletAccounts(): Promise<WalletAccount[]>
+
+  getBackupAvailability(provider: AuthProvider): Promise<boolean>
+  hasBackup(provider?: AuthProvider): Promise<boolean>
+  backupWallet(
+    password: string,
+    targets?: AuthProvider[]
+  ): Promise<BackupWriteResult>
+  retrieveWalletFromProvider(
+    password: string,
+    provider: AuthProvider
+  ): Promise<{ wallet: Wallet; mnemonic: string }>
+  deleteBackup(provider?: AuthProvider): Promise<void>
+  /**
+   * @deprecated Use `signIn('google')` and `hasBackup('google')` instead.
+   */
   loginWithGoogle(): Promise<{
     accessToken: string
     idToken: string
     hasBackup: boolean
-    userData: User | undefined
+    userData: GoogleAuthenticatedUser
   }>
-  createWallet(passphrase?: string): Promise<Wallet>
-  backupWallet(password: string): Promise<void>
-  retrieveWallet(password: string): Promise<{
-    wallet: Wallet
-    mnemonic: string
-  }>
-  signOut(): Promise<void>
-  deleteBackup(password: string): Promise<void>
-  getWalletAccounts(): Promise<WalletAccount[]>
+  /**
+   * @deprecated Use `retrieveWalletFromProvider(password, 'google')` instead.
+   */
+  retrieveWallet(
+    password: string
+  ): Promise<{ wallet: Wallet; mnemonic: string }>
+  /**
+   * @deprecated Use `deleteBackup('google')` instead.
+   */
+  deleteBackupWithoutPassword(): Promise<void>
+
   getBalance(account: WalletAccount): Promise<number>
+  setNetwork(network: NetworkType): void
+
   sendStx(
     accountIndex: number,
     to: string,
@@ -46,7 +82,6 @@ export interface ISDKFacade {
     to: string,
     network: NetworkType
   ): Promise<string>
-  deleteBackupWithoutPassword(): Promise<void>
 
   stackSTX(
     account: WalletAccount,
@@ -59,6 +94,7 @@ export interface ISDKFacade {
       authId: string
     }
   ): Promise<string>
+
   stackExtend(
     account: WalletAccount,
     extendCount: number,
@@ -69,6 +105,7 @@ export interface ISDKFacade {
       authId: string
     }
   ): Promise<string>
+
   stackIncrease(
     account: WalletAccount,
     increaseBy: number,
@@ -87,13 +124,8 @@ export interface ISDKFacade {
     delegateTo: StackingPool,
     untilBurnHeight?: number
   ): Promise<string>
+
   revokeDelegation(account: WalletAccount): Promise<string>
-
-  setNetwork(network: NetworkType): void
-
-  storeExistingWallet(mnemonic: string, passphrase?: string): Promise<Wallet>
-
-  createAccount(): Promise<WalletAccount>
 
   makeContractCall(
     contractAddress: string,
@@ -108,6 +140,4 @@ export interface ISDKFacade {
     accountIndex: number,
     transaction: StacksTransactionWire
   ): Promise<StacksTransactionWire>
-
-  hasBackup(): Promise<boolean>
 }

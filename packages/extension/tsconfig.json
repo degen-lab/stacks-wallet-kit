@@ -8,6 +8,6 @@
       "@degenlab/stacks-wallet-kit-core": ["../core/src/index.ts"]
     }
   },
-  "include": ["src", "testing"],
+  "include": ["src"],
   "references": [{ "path": "../core" }]
 }

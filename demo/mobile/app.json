@@ -1,19 +1,19 @@
 {
   "expo": {
-    "name": "mobile-google-web3",
-    "slug": "mobile-google-web3",
+    "name": "Stacks Wallet Kit Demo",
+    "slug": "stacks-wallet-kit-demo",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "mobilegoogleweb3",
+    "scheme": "stackswalletkit",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "bundleIdentifier": "com.stacksapp.development",
+      "bundleIdentifier": "com.degenlab.stackswalletkit.demo",
       "supportsTablet": true
     },
     "android": {
-      "package": "com.stacksapp.development",
+      "package": "com.degenlab.stackswalletkit.demo",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -30,6 +30,7 @@
     },
     "plugins": [
       "expo-router",
+      "expo-apple-authentication",
       [
         "expo-splash-screen",
         {
